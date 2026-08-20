@@ -139,6 +139,14 @@ class RouteScanner
      */
     protected function shouldExclude(Route $route): bool
     {
+        return $this->getExclusionReason($route) !== null;
+    }
+
+    /**
+     * Get the exclusion reason for a route, or null if the route should be included.
+     */
+    public function getExclusionReason(Route $route): ?string
+    {
         $uri = $route->uri();
         $name = $route->getName();
 
@@ -148,7 +156,7 @@ class RouteScanner
         if ($name) {
             foreach ($dynamicRules['includes']['names'] as $pattern) {
                 if (Str::is($pattern, $name)) {
-                    return false;
+                    return null;
                 }
             }
         }
@@ -156,7 +164,7 @@ class RouteScanner
             $cleanPrefix = trim($prefix, '/');
             $cleanUri = trim($uri, '/');
             if ($cleanUri === $cleanPrefix || Str::startsWith($cleanUri, $cleanPrefix . '/') || Str::is($prefix, $uri)) {
-                return false;
+                return null;
             }
         }
 
@@ -185,7 +193,7 @@ class RouteScanner
             }
 
             if (!$matchesWhitelist) {
-                return true; // Not in config whitelist
+                return 'Not in config whitelist';
             }
         }
 
@@ -195,7 +203,7 @@ class RouteScanner
             $cleanPrefix = trim($prefix, '/');
             $cleanUri = trim($uri, '/');
             if ($cleanUri === $cleanPrefix || Str::startsWith($cleanUri, $cleanPrefix . '/') || Str::is($prefix, $uri)) {
-                return true;
+                return "Excluded prefix: {$prefix}";
             }
         }
 
@@ -204,17 +212,51 @@ class RouteScanner
         if ($name) {
             foreach ($allNames as $pattern) {
                 if (Str::is($pattern, $name)) {
-                    return true;
+                    return "Excluded route name: {$pattern}";
                 }
             }
         }
 
         // 5. Exclude fallback routes (e.g., Route::fallback()).
         if (method_exists($route, 'isFallback') && $route->isFallback()) {
-            return true;
+            return 'Fallback route';
         }
 
-        return false;
+        return null;
+    }
+
+    /**
+     * Get all skipped routes with their details and exclusion reasons.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getSkippedRoutes(): \Illuminate\Support\Collection
+    {
+        $this->loadCustomRouteFiles();
+        $routes = $this->router->getRoutes()->getRoutes();
+        $skipped = collect();
+
+        foreach ($routes as $route) {
+            $reason = $this->getExclusionReason($route);
+            if ($reason !== null) {
+                $methods = $route->methods();
+                $primaryMethod = $methods[0] ?? 'GET';
+                if ($primaryMethod === 'HEAD') {
+                    continue;
+                }
+
+                $skipped->push((object) [
+                    'identifier'        => $this->resolveIdentifier($route),
+                    'method'            => $primaryMethod,
+                    'uri'               => $route->uri(),
+                    'controller_action' => $this->resolveControllerAction($route),
+                    'reason'            => $reason,
+                    'is_skipped'        => true,
+                ]);
+            }
+        }
+
+        return $skipped;
     }
 
     /**

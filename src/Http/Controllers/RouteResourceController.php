@@ -3,11 +3,13 @@
 namespace SalvatoreCervone\RolePermissionManager\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Artisan;
 use SalvatoreCervone\RolePermissionManager\Models\Permission;
 use SalvatoreCervone\RolePermissionManager\Models\SecuredResource;
 use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+use SalvatoreCervone\RolePermissionManager\Services\RouteScanner;
 
 class RouteResourceController extends Controller
 {
@@ -17,6 +19,46 @@ class RouteResourceController extends Controller
     public function index(Request $request)
     {
         $perPage = config('rolepermissionmanager.admin_panel.per_page', 25);
+        $status = $request->get('status');
+
+        // Handle Skipped / Excluded routes view
+        if ($status === 'skipped') {
+            /** @var RouteScanner $scanner */
+            $scanner = app(RouteScanner::class);
+            $allSkipped = $scanner->getSkippedRoutes();
+
+            if ($request->filled('method')) {
+                $method = $request->get('method');
+                $allSkipped = $allSkipped->where('method', $method);
+            }
+
+            if ($request->filled('search')) {
+                $search = strtolower($request->get('search'));
+                $allSkipped = $allSkipped->filter(function ($item) use ($search) {
+                    return str_contains(strtolower($item->identifier), $search)
+                        || str_contains(strtolower($item->uri), $search)
+                        || str_contains(strtolower($item->controller_action), $search)
+                        || str_contains(strtolower($item->reason), $search);
+                });
+            }
+
+            $page = (int) $request->get('page', 1);
+            $total = $allSkipped->count();
+            $items = $allSkipped->slice(($page - 1) * $perPage, $perPage)->values();
+
+            $routes = new LengthAwarePaginator(
+                $items,
+                $total,
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+
+            $methods = $scanner->getSkippedRoutes()->pluck('method')->unique()->sort();
+            $isSkipped = true;
+
+            return view('acl::routes.index', compact('routes', 'methods', 'isSkipped'));
+        }
 
         $query = SecuredResource::routes()->with('permissions')->orderBy('identifier');
 
@@ -43,8 +85,9 @@ class RouteResourceController extends Controller
 
         $routes = $query->paginate($perPage)->appends($request->query());
         $methods = SecuredResource::routes()->whereNotNull('method')->distinct()->pluck('method')->sort();
+        $isSkipped = false;
 
-        return view('acl::routes.index', compact('routes', 'methods'));
+        return view('acl::routes.index', compact('routes', 'methods', 'isSkipped'));
     }
 
     /**

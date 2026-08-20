@@ -109,6 +109,14 @@ class AdminPanelTest extends TestCase
         $response->assertSee('POST');
     }
 
+    public function test_routes_index_can_filter_by_skipped_status(): void
+    {
+        $response = $this->get('/acl-admin/routes?status=skipped');
+
+        $response->assertStatus(200);
+        $response->assertSee('Ignored / Excluded');
+    }
+
     public function test_can_update_route_configuration(): void
     {
         $resource = SecuredResource::create([

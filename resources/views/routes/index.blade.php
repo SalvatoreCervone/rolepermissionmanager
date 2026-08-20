@@ -26,6 +26,7 @@
             <option value="public" {{ request('status') === 'public' ? 'selected' : '' }}>🌐 {{ __('acl::routes.public') }}</option>
             <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🛡️ {{ __('acl::routes.protected') }}</option>
             <option value="deprecated" {{ request('status') === 'deprecated' ? 'selected' : '' }}>📦 {{ __('acl::routes.deprecated') }}</option>
+            <option value="skipped" {{ request('status') === 'skipped' ? 'selected' : '' }}>⏭️ {{ __('acl::routes.skipped') }}</option>
         </select>
         <button type="submit" class="btn btn-secondary btn-sm">{{ __('acl::common.filter') }}</button>
         @if(request()->hasAny(['search', 'method', 'status']))
@@ -35,10 +36,48 @@
 
     @if($routes->isEmpty())
         <div class="empty-state">
-            <div class="icon">🛤️</div>
-            <p>{{ __('acl::routes.no_routes_found') }}</p>
+            <div class="icon">{{ $isSkipped ? '⏭️' : '🛤️' }}</div>
+            <p>{{ $isSkipped ? __('acl::routes.no_skipped_routes_found') : __('acl::routes.no_routes_found') }}</p>
         </div>
+    @elseif($isSkipped)
+        {{-- Skipped / Excluded Routes Table --}}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>{{ __('acl::routes.method') }}</th>
+                        <th>{{ __('acl::routes.identifier') }}</th>
+                        <th>{{ __('acl::routes.uri') }}</th>
+                        <th>{{ __('acl::routes.controller_action') }}</th>
+                        <th>{{ __('acl::routes.exclusion_reason') }}</th>
+                        <th>{{ __('acl::routes.status') }}</th>
+                        <th>{{ __('acl::common.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($routes as $route)
+                    <tr>
+                        <td><span class="badge badge-{{ strtolower($route->method ?? 'get') }}">{{ $route->method }}</span></td>
+                        <td><code>{{ $route->identifier }}</code></td>
+                        <td><code>{{ $route->uri }}</code></td>
+                        <td><code style="font-size: 12px;">{{ $route->controller_action }}</code></td>
+                        <td>
+                            <span style="color: var(--warning); font-size: 13px;">⚠️ {{ $route->reason }}</span>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: var(--warning-subtle); color: var(--warning);">{{ __('acl::routes.skipped') }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ route('acl.scanner_rules.index') }}" class="btn btn-secondary btn-sm" title="{{ __('acl::routes.manage_rules') }}">⚙️ {{ __('acl::nav.scanner_rules') }}</a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        {{ $routes->links('acl::pagination') }}
     @else
+        {{-- Managed Routes Table --}}
         <div class="table-container">
             <table>
                 <thead>
