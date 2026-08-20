@@ -1,0 +1,94 @@
+<?php
+
+namespace SalvatoreCervone\RolePermissionManager\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use SalvatoreCervone\RolePermissionManager\Models\Permission;
+use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+
+class PermissionController extends Controller
+{
+    public function index(Request $request)
+    {
+        $perPage = config('rolepermissionmanager.admin_panel.per_page', 25);
+        $moduleFilter = $request->get('module');
+
+        $query = Permission::withCount('roles', 'securedResources')->orderBy('module')->orderBy('name');
+
+        if ($moduleFilter) {
+            $query->where('module', $moduleFilter);
+        }
+
+        $permissions = $query->paginate($perPage)->appends($request->query());
+        $modules = Permission::whereNotNull('module')->distinct()->pluck('module')->sort();
+
+        return view('acl::permissions.index', compact('permissions', 'modules', 'moduleFilter'));
+    }
+
+    public function create()
+    {
+        $modules = Permission::whereNotNull('module')->distinct()->pluck('module')->sort();
+
+        return view('acl::permissions.create', compact('modules'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'slug'        => 'required|string|max:255|unique:' . config('rolepermissionmanager.tables.permissions', 'acl_permissions') . ',slug',
+            'module'      => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        Permission::create($validated);
+        AclRegistry::flushResourcesCache();
+
+        return redirect()
+            ->route('acl.permissions.index')
+            ->with('success', "Permission '{$validated['name']}' created successfully.");
+    }
+
+    public function edit(int $id)
+    {
+        $permission = Permission::with('roles', 'securedResources')->findOrFail($id);
+        $modules = Permission::whereNotNull('module')->distinct()->pluck('module')->sort();
+
+        return view('acl::permissions.edit', compact('permission', 'modules'));
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $permission = Permission::findOrFail($id);
+
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'slug'        => 'required|string|max:255|unique:' . config('rolepermissionmanager.tables.permissions', 'acl_permissions') . ',slug,' . $id,
+            'module'      => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        $permission->update($validated);
+        AclRegistry::flushResourcesCache();
+
+        return redirect()
+            ->route('acl.permissions.edit', $id)
+            ->with('success', "Permission '{$permission->name}' updated successfully.");
+    }
+
+    public function destroy(int $id)
+    {
+        $permission = Permission::findOrFail($id);
+        $name = $permission->name;
+
+        $permission->roles()->detach();
+        $permission->securedResources()->detach();
+        $permission->delete();
+        AclRegistry::flushResourcesCache();
+
+        return redirect()
+            ->route('acl.permissions.index')
+            ->with('success', "Permission '{$name}' deleted successfully.");
+    }
+}

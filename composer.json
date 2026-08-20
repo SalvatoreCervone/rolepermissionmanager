@@ -1,0 +1,67 @@
+{
+    "name": "salvatorecervone/rolepermissionmanager",
+    "description": "A dynamic, database-driven Role & Permission Manager for Laravel. Replaces static middleware-based permission checks with a centralized, zero-hardcoding ACL system.",
+    "keywords": [
+        "laravel",
+        "laravel-package",
+        "roles",
+        "permissions",
+        "acl",
+        "rbac",
+        "abac",
+        "authorization",
+        "access-control",
+        "dynamic-permissions",
+        "zero-downtime",
+        "admin-panel",
+        "route-permissions",
+        "spatie-permission-alternative",
+        "middleware",
+        "gate",
+        "blade-directives",
+        "cache-optimized"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Salvatore Cervone",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/database": "^10.0|^11.0|^12.0",
+        "illuminate/routing": "^10.0|^11.0|^12.0",
+        "illuminate/cache": "^10.0|^11.0|^12.0",
+        "illuminate/auth": "^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SalvatoreCervone\\RolePermissionManager\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SalvatoreCervone\\RolePermissionManager\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SalvatoreCervone\\RolePermissionManager\\RolePermissionManagerServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

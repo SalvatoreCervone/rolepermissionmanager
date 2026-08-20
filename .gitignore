@@ -1,0 +1,12 @@
+/vendor/
+/composer.lock
+/.phpunit.cache/
+/.phpunit.result.cache
+/.idea/
+/.vscode/
+/workbench/database/*.sqlite
+/workbench/database/*.sqlite-journal
+/database/*.sqlite
+/database/*.sqlite-journal
+*.log
+.DS_Store

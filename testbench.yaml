@@ -1,0 +1,21 @@
+providers:
+  - SalvatoreCervone\RolePermissionManager\RolePermissionManagerServiceProvider
+  - Workbench\App\Providers\WorkbenchServiceProvider
+
+migrations: true
+
+seeders:
+  - Workbench\Database\Seeders\DatabaseSeeder
+
+workbench:
+  start: /acl-admin
+  install: true
+  health: false
+  discovers:
+    web: true
+    api: false
+    commands: false
+    components: false
+  build: []
+  assets: []
+  sync: []

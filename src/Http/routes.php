@@ -1,0 +1,50 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use SalvatoreCervone\RolePermissionManager\Http\Controllers\DashboardController;
+use SalvatoreCervone\RolePermissionManager\Http\Controllers\PermissionController;
+use SalvatoreCervone\RolePermissionManager\Http\Controllers\RoleController;
+use SalvatoreCervone\RolePermissionManager\Http\Controllers\SecuredResourceController;
+use SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController;
+
+$prefix = config('rolepermissionmanager.admin_panel.prefix', 'acl-admin');
+$middleware = config('rolepermissionmanager.admin_panel.middleware', ['web', 'auth']);
+
+Route::prefix($prefix)
+    ->middleware($middleware)
+    ->name('acl.')
+    ->group(function () {
+
+        // Dashboard
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+        // Users & ACL Assignment
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
+        Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+
+        // Roles
+        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
+        Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
+        Route::get('/roles/{id}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+        Route::put('/roles/{id}', [RoleController::class, 'update'])->name('roles.update');
+        Route::delete('/roles/{id}', [RoleController::class, 'destroy'])->name('roles.destroy');
+
+        // Permissions
+        Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+        Route::get('/permissions/create', [PermissionController::class, 'create'])->name('permissions.create');
+        Route::post('/permissions', [PermissionController::class, 'store'])->name('permissions.store');
+        Route::get('/permissions/{id}/edit', [PermissionController::class, 'edit'])->name('permissions.edit');
+        Route::put('/permissions/{id}', [PermissionController::class, 'update'])->name('permissions.update');
+        Route::delete('/permissions/{id}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
+
+        // Secured Resources
+        Route::get('/resources', [SecuredResourceController::class, 'index'])->name('resources.index');
+        Route::get('/resources/{id}/edit', [SecuredResourceController::class, 'edit'])->name('resources.edit');
+        Route::put('/resources/{id}', [SecuredResourceController::class, 'update'])->name('resources.update');
+
+        // Sync trigger
+        Route::post('/resources/sync', [SecuredResourceController::class, 'sync'])->name('resources.sync');
+    });
