@@ -1,36 +1,32 @@
 @extends('acl::layouts.app')
-@section('title', __('acl::users.manage_access') . ': ' . ($user->{$displayField} ?? "User #{$user->getKey()}") . ' — ' . config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))
+@section('title', __('acl::users.edit_access_title', ['name' => $user->name ?? $user->email]) . ' — ' . config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))
 @section('content')
 <div class="page-header">
     <div>
-        <h2>{{ __('acl::users.manage_access') }}: {{ $user->{$displayField} ?? "User #{$user->getKey()}" }}</h2>
-        <div class="breadcrumb"><a href="{{ route('acl.users.index') }}" style="color: var(--accent); text-decoration: none;">{{ __('acl::nav.users') }}</a> / {{ __('acl::users.manage_access') }}</div>
+        <h2>{{ __('acl::users.edit_access_title', ['name' => $user->name ?? $user->email]) }}</h2>
+        <div class="breadcrumb"><a href="{{ route('acl.users.index') }}" style="color: var(--accent); text-decoration: none;">{{ __('acl::users.title') }}</a> / {{ __('acl::common.edit') }}</div>
     </div>
 </div>
 
-<form action="{{ route('acl.users.update', $user->getKey()) }}" method="POST">
+<form action="{{ route('acl.users.update', $user->id) }}" method="POST">
     @csrf @method('PUT')
 
-    {{-- User Info Summary --}}
+    {{-- User Summary Card --}}
     <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header"><h3>👤 {{ __('acl::users.user_info') }}</h3></div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <div class="card-header">
+            <h3>👤 {{ __('acl::users.user_info') }}</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
             <div>
-                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ ucfirst($displayField) }}</label>
-                <div style="font-size: 15px; font-weight: 600; margin-top: 4px;">{{ $user->{$displayField} ?? '—' }}</div>
-            </div>
-            @if($secondaryField)
-            <div>
-                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ ucfirst($secondaryField) }}</label>
-                <div style="font-size: 15px; color: var(--text-secondary); margin-top: 4px;">{{ $user->{$secondaryField} ?? '—' }}</div>
-            </div>
-            @endif
-            <div>
-                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::users.user_id') }}</label>
-                <div style="font-size: 15px; font-family: monospace; color: var(--info); margin-top: 4px;">#{{ $user->getKey() }}</div>
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::users.name') }}</label>
+                <div style="font-size: 16px; font-weight: 600; margin-top: 4px;">{{ $user->name ?? '—' }}</div>
             </div>
             <div>
-                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::users.super_admin_status') }}</label>
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::users.email') }}</label>
+                <div style="font-size: 16px; margin-top: 4px;"><code>{{ $user->email ?? '—' }}</code></div>
+            </div>
+            <div>
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::users.status') }}</label>
                 <div style="margin-top: 4px;">
                     @if(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
                         <span class="badge badge-post">{{ __('acl::users.super_admin_yes') }}</span>
@@ -48,7 +44,7 @@
             <h3>👥 {{ __('acl::users.assigned_roles') }}</h3>
             <span style="font-size: 13px; color: var(--text-muted);">{{ $user->roles->count() }} {{ __('acl::common.selected') }}</span>
         </div>
-        @php $userRoleIds = $user->roles->pluck('id')->all(); @endphp
+        @php $userRoleIds = old('roles', $user->roles->pluck('id')->all()); @endphp
 
         <div class="checkbox-grid">
             @forelse($allRoles as $role)
@@ -67,50 +63,17 @@
     </div>
 
     {{-- Direct Permissions --}}
-    <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header">
-            <div>
-                <h3>🔑 {{ __('acl::users.direct_permissions') }}</h3>
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                    {{ __('acl::users.direct_permissions_help') }}
-                </div>
-            </div>
-            <span style="font-size: 13px; color: var(--text-muted);">{{ $user->permissions->count() }} {{ __('acl::common.direct') }}</span>
-        </div>
-
-        @php
-            $userDirectPermissionIds = $user->permissions->pluck('id')->all();
-            $rolePermissionSlugs = $user->roles->pluck('permissions')->flatten()->pluck('slug')->all();
-        @endphp
-
-        @forelse($allPermissions as $module => $permissions)
-            <div class="module-section">
-                <h4>{{ $module ?: __('acl::permissions.uncategorized') }}</h4>
-                <div class="checkbox-grid">
-                    @foreach($permissions as $permission)
-                    @php $grantedViaRole = in_array($permission->slug, $rolePermissionSlugs); @endphp
-                    <label class="checkbox-item {{ in_array($permission->id, $userDirectPermissionIds) ? 'checked' : '' }}">
-                        <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                            {{ in_array($permission->id, $userDirectPermissionIds) ? 'checked' : '' }}>
-                        <div>
-                            <div class="cb-label">
-                                {{ $permission->name }}
-                                @if($grantedViaRole)
-                                    <span class="badge badge-get" style="font-size: 9px; margin-left: 4px;">{{ __('acl::users.via_role') }}</span>
-                                @endif
-                            </div>
-                            <div class="cb-slug">{{ $permission->slug }}</div>
-                        </div>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-        @empty
-            <div class="empty-state">
-                <p>{{ __('acl::roles.no_permissions_yet') }} <a href="{{ route('acl.permissions.create') }}" style="color: var(--accent);">{{ __('acl::permissions.new_permission') }}</a>.</p>
-            </div>
-        @endforelse
-    </div>
+    @php
+        $rolePermissionSlugs = $user->roles->pluck('permissions')->flatten()->pluck('slug')->all();
+    @endphp
+    @include('acl::partials.permission-picker', [
+        'allPermissions'      => $allPermissions,
+        'selectedPermissions' => old('permissions', $user->permissions->pluck('id')->all()),
+        'title'               => __('acl::users.direct_permissions'),
+        'helpText'            => __('acl::users.direct_permissions_help'),
+        'countLabel'          => __('acl::common.direct'),
+        'grantedRoleSlugs'    => $rolePermissionSlugs,
+    ])
 
     <div style="display: flex; gap: 12px;">
         <button type="submit" class="btn btn-primary">{{ __('acl::users.save_access') }}</button>

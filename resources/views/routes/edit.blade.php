@@ -35,75 +35,14 @@
     </div>
 
     {{-- Access Settings --}}
-    <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header"><h3>⚙️ {{ __('acl::routes.access_settings') }}</h3></div>
-
-        <div class="form-group">
-            <label>{{ __('acl::routes.public_access') }}</label>
-            <div class="toggle-container">
-                <input type="hidden" name="is_public" value="{{ old('is_public', $resource->is_public) ? '1' : '0' }}">
-                <div class="toggle {{ old('is_public', $resource->is_public) ? 'active' : '' }}"></div>
-                <span class="toggle-label">
-                    {{ $resource->is_public ? __('acl::routes.public_help') : __('acl::routes.protected_help') }}
-                </span>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label>{{ __('acl::routes.super_admin_only') }}</label>
-            <div class="toggle-container">
-                <input type="hidden" name="is_super_admin_only" value="{{ old('is_super_admin_only', $resource->is_super_admin_only) ? '1' : '0' }}">
-                <div class="toggle {{ old('is_super_admin_only', $resource->is_super_admin_only) ? 'active' : '' }}"></div>
-                <span class="toggle-label">
-                    {{ __('acl::routes.super_admin_only_help') }}
-                </span>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="operator">{{ __('acl::routes.operator_label') }}</label>
-            <select id="operator" name="operator" class="form-control" style="max-width: 350px;">
-                <option value="OR" {{ old('operator', $resource->operator) === 'OR' ? 'selected' : '' }}>
-                    {{ __('acl::routes.operator_or') }}
-                </option>
-                <option value="AND" {{ old('operator', $resource->operator) === 'AND' ? 'selected' : '' }}>
-                    {{ __('acl::routes.operator_and') }}
-                </option>
-            </select>
-        </div>
-    </div>
+    @include('acl::partials.access-settings', ['resource' => $resource])
 
     {{-- Permission Assignment --}}
-    <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header">
-            <h3>🔑 {{ __('acl::routes.required_permissions') }}</h3>
-            <span style="font-size: 13px; color: var(--text-muted);">{{ $resource->permissions->count() }} {{ __('acl::common.selected') }}</span>
-        </div>
-
-        @php $resourcePermissionIds = $resource->permissions->pluck('id')->all(); @endphp
-
-        @forelse($allPermissions as $module => $permissions)
-            <div class="module-section">
-                <h4>{{ $module ?: __('acl::permissions.uncategorized') }}</h4>
-                <div class="checkbox-grid">
-                    @foreach($permissions as $permission)
-                    <label class="checkbox-item {{ in_array($permission->id, $resourcePermissionIds) ? 'checked' : '' }}">
-                        <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                            {{ in_array($permission->id, $resourcePermissionIds) ? 'checked' : '' }}>
-                        <div>
-                            <div class="cb-label">{{ $permission->name }}</div>
-                            <div class="cb-slug">{{ $permission->slug }}</div>
-                        </div>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-        @empty
-            <div class="empty-state">
-                <p>{{ __('acl::roles.no_permissions_yet') }} <a href="{{ route('acl.permissions.create') }}" style="color: var(--accent);">{{ __('acl::permissions.new_permission') }}</a>.</p>
-            </div>
-        @endforelse
-    </div>
+    @include('acl::partials.permission-picker', [
+        'allPermissions'      => $allPermissions,
+        'selectedPermissions' => old('permissions', $resource->permissions->pluck('id')->all()),
+        'title'               => __('acl::routes.required_permissions'),
+    ])
 
     <div style="display: flex; gap: 12px;">
         <button type="submit" class="btn btn-primary">{{ __('acl::common.save_config') }}</button>

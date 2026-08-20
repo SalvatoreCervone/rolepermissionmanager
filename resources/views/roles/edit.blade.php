@@ -27,35 +27,12 @@
         </div>
     </div>
 
-    <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header">
-            <h3>🔑 {{ __('acl::roles.assign_permissions') }}</h3>
-            <span style="font-size: 13px; color: var(--text-muted);">{{ $role->permissions->count() }} {{ __('acl::common.selected') }}</span>
-        </div>
-        @php $rolePermissionIds = $role->permissions->pluck('id')->all(); @endphp
-
-        @forelse($allPermissions as $module => $permissions)
-            <div class="module-section">
-                <h4>{{ $module ?: __('acl::permissions.uncategorized') }}</h4>
-                <div class="checkbox-grid">
-                    @foreach($permissions as $permission)
-                    <label class="checkbox-item {{ in_array($permission->id, $rolePermissionIds) ? 'checked' : '' }}">
-                        <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                            {{ in_array($permission->id, $rolePermissionIds) ? 'checked' : '' }}>
-                        <div>
-                            <div class="cb-label">{{ $permission->name }}</div>
-                            <div class="cb-slug">{{ $permission->slug }}</div>
-                        </div>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-        @empty
-            <div class="empty-state">
-                <p>{{ __('acl::roles.no_permissions_yet') }} <a href="{{ route('acl.permissions.create') }}" style="color: var(--accent);">{{ __('acl::permissions.new_permission') }}</a>.</p>
-            </div>
-        @endforelse
-    </div>
+    {{-- Assign Permissions --}}
+    @include('acl::partials.permission-picker', [
+        'allPermissions'      => $allPermissions,
+        'selectedPermissions' => old('permissions', $role->permissions->pluck('id')->all()),
+        'title'               => __('acl::roles.assign_permissions'),
+    ])
 
     <div style="display: flex; gap: 12px;">
         <button type="submit" class="btn btn-primary">{{ __('acl::common.save') }}</button>
