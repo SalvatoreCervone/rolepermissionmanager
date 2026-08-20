@@ -241,4 +241,76 @@ class HasAclTraitTest extends TestCase
         $this->assertEquals($perm1->id, $perm2->id);
         $this->assertEquals('Testing', $perm2->module);
     }
+
+    public function test_gate_allows_both_permissions_and_roles(): void
+    {
+        $user = $this->createUser();
+        $role = Role::create(['name' => 'Editor', 'slug' => 'editor']);
+        Permission::create(['name' => 'Edit Posts', 'slug' => 'posts.edit']);
+
+        $role->givePermissionTo('posts.edit');
+        $user->assignRole('editor');
+
+        // Test with permission slug via Gate
+        $this->assertTrue(\Illuminate\Support\Facades\Gate::forUser($user)->allows('posts.edit'));
+
+        // Test with role slug via Gate
+        $this->assertTrue(\Illuminate\Support\Facades\Gate::forUser($user)->allows('editor'));
+
+        // Test non-assigned ability
+        $this->assertFalse(\Illuminate\Support\Facades\Gate::forUser($user)->allows('non_existent'));
+    }
+
+    public function test_filter_navigation_menu(): void
+    {
+        $user = $this->createUser();
+        Permission::create(['name' => 'Scrivi RI', 'slug' => 'scrivi_rapportoinformativo']);
+        Permission::create(['name' => 'Scrivi RD', 'slug' => 'scrivi_anagraficarelazionedirigenziale']);
+        Permission::create(['name' => 'Leggi RD', 'slug' => 'leggi_relazionidirigenziali']);
+
+        // Give user only 'scrivi_rapportoinformativo'
+        $user->givePermissionTo('scrivi_rapportoinformativo');
+
+        $menu = [
+            [
+                'permessi' => ['scrivi_rapportoinformativo', 'scrivi_anagraficarelazionedirigenziale', 'leggi_relazionidirigenziali'],
+                'label'    => 'Uff. Valutazioni',
+                'icon'     => 'pi pi-fw pi-home',
+                'items'    => [
+                    [
+                        'permessi' => ['scrivi_rapportoinformativo'],
+                        'label'    => 'Organico RI',
+                        'url'      => '/rapportiinformativi/match',
+                    ],
+                    [
+                        'permessi' => ['scrivi_anagraficarelazionedirigenziale'],
+                        'label'    => 'Organico RD',
+                        'url'      => '/relazionidirigenziali/match',
+                    ],
+                ],
+            ],
+            [
+                'permessi' => ['leggi_relazionidirigenziali'],
+                'label'    => 'Archivio',
+                'url'      => '/archivio',
+            ],
+        ];
+
+        $filtered = $user->filterNavigation($menu);
+
+        // 'Uff. Valutazioni' is present
+        $this->assertCount(1, $filtered);
+        $this->assertEquals('Uff. Valutazioni', $filtered[0]['label']);
+
+        // In 'items', only 'Organico RI' is present, 'Organico RD' was stripped
+        $this->assertCount(1, $filtered[0]['items']);
+        $this->assertEquals('Organico RI', $filtered[0]['items'][0]['label']);
+
+        // Super admin sees all
+        Role::create(['name' => 'Super Admin', 'slug' => 'super-admin']);
+        $user->assignRole('super-admin');
+        $this->assertCount(2, $user->filterNavigation($menu));
+    }
 }
+
+

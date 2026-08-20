@@ -308,6 +308,28 @@ trait HasAcl
         return AclRegistry::getUserPermissions($this);
     }
 
+    /**
+     * Filter a hierarchical navigation menu array based on this model's permissions and roles.
+     *
+     * @param  array  $menu  Hierarchical menu array.
+     * @return array  Filtered menu array.
+     */
+    public function filterNavigation(array $menu): array
+    {
+        return AclRegistry::filterMenu($menu, $this);
+    }
+
+    /**
+     * Alias for filterNavigation().
+     *
+     * @param  array  $menu  Hierarchical menu array.
+     * @return array  Filtered menu array.
+     */
+    public function filterMenu(array $menu): array
+    {
+        return AclRegistry::filterMenu($menu, $this);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Resolvers (Internal)

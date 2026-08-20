@@ -164,10 +164,13 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
             }
 
             // Check if the user has the permission (by slug).
-            if (method_exists($user, 'hasPermission')) {
-                if ($user->hasPermission($ability)) {
-                    return true;
-                }
+            if (method_exists($user, 'hasPermission') && $user->hasPermission($ability)) {
+                return true;
+            }
+
+            // Check if the user has the role (by slug) for seamless can:role compatibility.
+            if (method_exists($user, 'hasRole') && $user->hasRole($ability)) {
+                return true;
             }
 
             // Return null to let other gates/policies handle it.

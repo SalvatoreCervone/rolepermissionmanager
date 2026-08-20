@@ -287,6 +287,35 @@ The package hooks into Laravel's `Gate::before`, allowing standard `@can` and `$
 if ($request->user()->can('invoices.export')) {
     // Authorized
 }
+### Menu & Navigation Tree Filtering
+
+Filter dynamic, nested sidebar/menu structures (e.g., PrimeVue, PrimeReact, Admin menus) automatically based on the user's permissions and roles:
+
+```php
+$menu = [
+    [
+        'label'    => 'Uff. Valutazioni',
+        'icon'     => 'pi pi-fw pi-home',
+        'permessi' => ['scrivi_rapportoinformativo', 'scrivi_anagraficarelazionedirigenziale'],
+        'items'    => [
+            [
+                'label'    => 'Organico RI',
+                'url'      => '/rapportiinformativi/match',
+                'permessi' => ['scrivi_rapportoinformativo'],
+            ],
+            [
+                'label'    => 'Organico RD',
+                'url'      => '/relazionidirigenziali/match',
+                'permessi' => ['scrivi_anagraficarelazionedirigenziale'],
+            ],
+        ],
+    ],
+];
+
+// Returns only the items and sub-items the user is authorized to see
+$filteredMenu = auth()->user()->filterNavigation($menu);
+// Or via static helper:
+$filteredMenu = \SalvatoreCervone\RolePermissionManager\Services\AclRegistry::filterMenu($menu);
 ```
 
 ---

@@ -282,4 +282,130 @@ class AclRegistry
         static::getResourcesMap(); // Rebuild immediately.
         static::getScannerRules();
     }
+
+    /**
+     * Filter a hierarchical navigation menu array based on a user's permissions and roles.
+     *
+     * Supports nested items ('items', 'children', 'subitems') and permission/role keys
+     * ('permessi', 'permissions', 'permission', 'ruoli', 'roles', 'role', 'can', 'route').
+     *
+     * @param  array  $menu  Hierarchical menu items.
+     * @param  mixed  $user  User model or null (falls back to auth()->user()).
+     * @return array  Filtered menu array with sequential indexing preserved for frontend frameworks.
+     */
+    public static function filterMenu(array $menu, mixed $user = null): array
+    {
+        $user = $user ?? auth()->user();
+
+        if (!$user) {
+            return [];
+        }
+
+        // Super Admin bypass: can see everything.
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return array_values($menu);
+        }
+
+        $filtered = [];
+
+        foreach ($menu as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            // Detect children key ('items', 'children', 'subitems')
+            $childrenKey = null;
+            foreach (['items', 'children', 'subitems'] as $ck) {
+                if (isset($item[$ck]) && is_array($item[$ck])) {
+                    $childrenKey = $ck;
+                    break;
+                }
+            }
+
+            // Recursively filter children if present
+            $hasFilteredChildren = false;
+            if ($childrenKey) {
+                $filteredChildren = static::filterMenu($item[$childrenKey], $user);
+                $item[$childrenKey] = $filteredChildren;
+                $hasFilteredChildren = !empty($filteredChildren);
+            }
+
+            // Check access for this item
+            $isAuthorized = static::checkMenuItemAccess($item, $user);
+
+            // Item with children: keep only if parent is authorized AND has at least one accessible child
+            if ($childrenKey) {
+                if ($isAuthorized && $hasFilteredChildren) {
+                    $filtered[] = $item;
+                }
+            } elseif ($isAuthorized) {
+                $filtered[] = $item;
+            }
+        }
+
+        return array_values($filtered);
+    }
+
+    /**
+     * Check if a user is authorized for a specific menu item.
+     */
+    protected static function checkMenuItemAccess(array $item, mixed $user): bool
+    {
+        // 1. Explicit permissions ('permessi', 'permissions', 'permission')
+        $perms = $item['permessi'] ?? $item['permissions'] ?? $item['permission'] ?? null;
+        if ($perms !== null) {
+            $perms = (array) $perms;
+            if (!empty($perms)) {
+                $operator = strtoupper($item['operator'] ?? 'OR');
+                $userPermissions = method_exists($user, 'getAllPermissions')
+                    ? $user->getAllPermissions()
+                    : (method_exists($user, 'permissions') ? $user->permissions->pluck('slug')->all() : []);
+
+                if ($operator === 'AND') {
+                    $hasPerms = empty(array_diff($perms, $userPermissions));
+                } else {
+                    $hasPerms = !empty(array_intersect($perms, $userPermissions));
+                }
+
+                if (!$hasPerms) {
+                    return false;
+                }
+            }
+        }
+
+        // 2. Explicit roles ('ruoli', 'roles', 'role')
+        $roles = $item['ruoli'] ?? $item['roles'] ?? $item['role'] ?? null;
+        if ($roles !== null) {
+            $roles = (array) $roles;
+            if (!empty($roles)) {
+                $roleOperator = strtoupper($item['role_operator'] ?? 'OR');
+                if (method_exists($user, 'hasAnyRole')) {
+                    if ($roleOperator === 'AND' && method_exists($user, 'hasAllRoles')) {
+                        if (!$user->hasAllRoles($roles)) {
+                            return false;
+                        }
+                    } elseif (!$user->hasAnyRole($roles)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // 3. Check 'can' via Gate
+        if (isset($item['can']) && is_string($item['can'])) {
+            if (method_exists($user, 'can') && !$user->can($item['can'])) {
+                return false;
+            }
+        }
+
+        // 4. Check route access if 'route' is specified
+        if (isset($item['route']) && is_string($item['route']) && method_exists($user, 'canAccessRoute')) {
+            if (!$user->canAccessRoute($item['route'])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
+
