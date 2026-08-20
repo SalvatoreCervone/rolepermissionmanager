@@ -191,4 +191,13 @@ class AdminPanelTest extends TestCase
         $response->assertSee('Permessi');
         $response->assertSee('Utenti & Accessi');
     }
+
+    public function test_admin_panel_sync_routes_button_executes_successfully(): void
+    {
+        $response = $this->post('/acl-admin/resources/sync');
+
+        $response->assertRedirect('/acl-admin');
+        $response->assertSessionHas('success');
+        $response->assertSessionHas('sync_output');
+    }
 }

@@ -192,6 +192,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | API Routes
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the package's JSON API endpoints.
+    |
+    | - enabled: If true, API routes are registered.
+    | - prefix: The URL prefix for API endpoints (default: 'acl-api').
+    | - middleware: The middleware stack applied to API endpoints.
+    |
+    */
+    'api' => [
+        'enabled'    => true,
+        'prefix'     => 'acl-api',
+        'middleware' => ['api'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin Panel
     |--------------------------------------------------------------------------
     |

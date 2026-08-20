@@ -41,7 +41,7 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
         $this->publishMigrations();
         $this->registerTranslations();
         $this->registerViews();
-        $this->registerAdminRoutes();
+        $this->registerRoutes();
         $this->registerCommands();
         $this->registerMiddleware();
         $this->registerGateIntegration();
@@ -103,15 +103,24 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register admin panel routes if enabled.
+     * Register package routes (web and api).
      */
-    protected function registerAdminRoutes(): void
+    protected function registerRoutes(): void
     {
-        if (!config('rolepermissionmanager.admin_panel.enabled', true)) {
-            return;
+        $this->publishes([
+            __DIR__ . '/../routes/web.php' => base_path('routes/acl-web.php'),
+            __DIR__ . '/../routes/api.php' => base_path('routes/acl-api.php'),
+        ], 'rolepermissionmanager-routes');
+
+        // Register Web routes if admin panel is enabled.
+        if (config('rolepermissionmanager.admin_panel.enabled', true)) {
+            $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
         }
 
-        $this->loadRoutesFrom(__DIR__ . '/Http/routes.php');
+        // Register API routes if enabled.
+        if (config('rolepermissionmanager.api.enabled', true)) {
+            $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
+        }
     }
 
     /**
@@ -119,11 +128,9 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                SyncAclRoutesCommand::class,
-            ]);
-        }
+        $this->commands([
+            SyncAclRoutesCommand::class,
+        ]);
     }
 
     /**

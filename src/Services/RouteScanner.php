@@ -39,10 +39,15 @@ class RouteScanner
         $this->excludedPrefixes = config('rolepermissionmanager.scanner.excluded_prefixes', []);
         $this->excludedNames = config('rolepermissionmanager.scanner.excluded_names', []);
 
-        // Automatically exclude admin panel routes from scanning.
+        // Automatically exclude admin panel and API routes from scanning.
         $adminPrefix = config('rolepermissionmanager.admin_panel.prefix', 'acl-admin');
         if ($adminPrefix && !in_array($adminPrefix, $this->excludedPrefixes)) {
             $this->excludedPrefixes[] = $adminPrefix;
+        }
+
+        $apiPrefix = config('rolepermissionmanager.api.prefix', 'acl-api');
+        if ($apiPrefix && !in_array($apiPrefix, $this->excludedPrefixes)) {
+            $this->excludedPrefixes[] = $apiPrefix;
         }
     }
 

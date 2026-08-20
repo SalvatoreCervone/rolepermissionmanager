@@ -24,7 +24,7 @@ Route::prefix($prefix)
         Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
 
-        // Roles
+        // Roles Management
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
         Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
         Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
@@ -32,7 +32,7 @@ Route::prefix($prefix)
         Route::put('/roles/{id}', [RoleController::class, 'update'])->name('roles.update');
         Route::delete('/roles/{id}', [RoleController::class, 'destroy'])->name('roles.destroy');
 
-        // Permissions
+        // Permissions Management
         Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
         Route::get('/permissions/create', [PermissionController::class, 'create'])->name('permissions.create');
         Route::post('/permissions', [PermissionController::class, 'store'])->name('permissions.store');
@@ -40,11 +40,11 @@ Route::prefix($prefix)
         Route::put('/permissions/{id}', [PermissionController::class, 'update'])->name('permissions.update');
         Route::delete('/permissions/{id}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
 
-        // Secured Resources
+        // Secured Resources Management
         Route::get('/resources', [SecuredResourceController::class, 'index'])->name('resources.index');
         Route::get('/resources/{id}/edit', [SecuredResourceController::class, 'edit'])->name('resources.edit');
         Route::put('/resources/{id}', [SecuredResourceController::class, 'update'])->name('resources.update');
 
-        // Sync trigger
+        // Route Scanner Sync Trigger
         Route::post('/resources/sync', [SecuredResourceController::class, 'sync'])->name('resources.sync');
     });

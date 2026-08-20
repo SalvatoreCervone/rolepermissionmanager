@@ -79,6 +79,7 @@ Or publish individual components using specific tags:
 | **Migrations** (Required) | `php artisan vendor:publish --tag=rolepermissionmanager-migrations` | `database/migrations/` |
 | **Language Files** (Optional) | `php artisan vendor:publish --tag=rolepermissionmanager-lang` | `lang/vendor/acl/` |
 | **Blade Views** (Optional) | `php artisan vendor:publish --tag=rolepermissionmanager-views` | `resources/views/vendor/acl/` |
+| **Routes** (Optional) | `php artisan vendor:publish --tag=rolepermissionmanager-routes` | `routes/acl-web.php` & `routes/acl-api.php` |
 
 ```bash
 # 1. Config file (custom table names, cache TTL, super admin, locale, etc.)
@@ -92,6 +93,9 @@ php artisan vendor:publish --tag=rolepermissionmanager-lang
 
 # 4. (Optional) Admin panel Blade views for custom branding & UI styling
 php artisan vendor:publish --tag=rolepermissionmanager-views
+
+# 5. (Optional) Custom route files for extending Web & API endpoints
+php artisan vendor:publish --tag=rolepermissionmanager-routes
 ```
 
 ### 3. Run Database Migrations
