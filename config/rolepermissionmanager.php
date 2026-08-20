@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Localization / Language
@@ -24,14 +23,14 @@ return [
     |
     */
     'tables' => [
-        'roles'                  => 'acl_roles',
-        'permissions'            => 'acl_permissions',
-        'secured_resources'      => 'acl_secured_resources',
-        'model_has_roles'        => 'acl_model_has_roles',
-        'model_has_permissions'  => 'acl_model_has_permissions',
-        'role_has_permissions'   => 'acl_role_has_permissions',
+        'roles' => 'acl_roles',
+        'permissions' => 'acl_permissions',
+        'secured_resources' => 'acl_secured_resources',
+        'model_has_roles' => 'acl_model_has_roles',
+        'model_has_permissions' => 'acl_model_has_permissions',
+        'role_has_permissions' => 'acl_role_has_permissions',
         'permission_has_resources' => 'acl_permission_has_resources',
-        'scanner_rules'          => 'acl_scanner_rules',
+        'scanner_rules' => 'acl_scanner_rules',
     ],
 
     /*
@@ -44,11 +43,11 @@ return [
     |
     */
     'models' => [
-        'user'              => 'App\\Models\\User',
-        'role'              => SalvatoreCervone\RolePermissionManager\Models\Role::class,
-        'permission'        => SalvatoreCervone\RolePermissionManager\Models\Permission::class,
-        'secured_resource'  => SalvatoreCervone\RolePermissionManager\Models\SecuredResource::class,
-        'scanner_rule'      => SalvatoreCervone\RolePermissionManager\Models\ScannerRule::class,
+        'user' => 'App\\Models\\User',
+        'role' => SalvatoreCervone\RolePermissionManager\Models\Role::class,
+        'permission' => SalvatoreCervone\RolePermissionManager\Models\Permission::class,
+        'secured_resource' => SalvatoreCervone\RolePermissionManager\Models\SecuredResource::class,
+        'scanner_rule' => SalvatoreCervone\RolePermissionManager\Models\ScannerRule::class,
     ],
 
     /*
@@ -66,11 +65,11 @@ return [
     |
     */
     'users' => [
-        'table'             => 'users',
+        'table' => 'users',
         'searchable_fields' => ['name', 'email'],
-        'display_field'     => 'name',
-        'secondary_field'   => 'email',
-        'per_page'          => 25,
+        'display_field' => 'name',
+        'secondary_field' => 'email',
+        'per_page' => 25,
     ],
 
     /*
@@ -100,8 +99,8 @@ return [
     |
     */
     'cache' => [
-        'store'  => null,
-        'ttl'    => 86400, // 24 hours
+        'store' => null,
+        'ttl' => 86400, // 24 hours
         'prefix' => 'acl_',
     ],
 
@@ -112,6 +111,10 @@ return [
     |
     | Configuration for the automatic route discovery system.
     |
+    | - route_files: Optional list of additional route files to ensure are loaded
+    |   during scanning (e.g. ['routes/maschere.php', 'routes/custom.php']).
+    | - included_prefixes: If not empty, ONLY scan routes matching these URI prefixes.
+    | - included_names: If not empty, ONLY scan routes matching these name patterns.
     | - excluded_prefixes: Route URI prefixes to ignore during scanning.
     | - excluded_names: Specific route names to ignore during scanning.
     | - default_is_public: Whether newly discovered routes should default
@@ -122,35 +125,23 @@ return [
     |
     */
     'scanner' => [
-        'excluded_prefixes' => [
-            '_ignition',
-            '_debugbar',
-            'sanctum',
-            'telescope',
-            'horizon',
-            'livewire',
-            'workbench',
-            'storage',
-            'up',
+        'route_files' => [
+            // 'routes/maschere.php',
         ],
-        'excluded_names' => [
-            'login',
-            '*.login',
-            'logout',
-            '*.logout',
-            'register',
-            '*.register',
-            'password.*',
-            'verification.*',
-            'sanctum.*',
-            'ignition.*',
-            'livewire.*',
-            'workbench.*',
-            'storage.*',
+        'included_prefixes' => [
+            // 'api',
+            // 'valutazioni',
+            // 'decreti',
         ],
-        'default_is_public'         => false,
-        'default_operator'          => 'OR',
-        'auto_create_permissions'   => false,
+        'included_names' => [
+            // 'api.*',
+            // 'valutazioni.*',
+        ],
+        'excluded_prefixes' => ['_ignition', '_debugbar', 'sanctum', 'telescope', 'horizon', 'livewire', 'workbench', 'storage', 'up'],
+        'excluded_names' => ['login', '*.login', 'logout', '*.logout', 'register', '*.register', 'password.*', 'verification.*', 'sanctum.*', 'ignition.*', 'livewire.*', 'workbench.*', 'storage.*'],
+        'default_is_public' => false,
+        'default_operator' => 'OR',
+        'auto_create_permissions' => false,
     ],
 
     /*
@@ -170,8 +161,8 @@ return [
     |
     */
     'middleware' => [
-        'register_globally'    => true,
-        'guard'                => null, // null = default guard
+        'register_globally' => true,
+        'guard' => null, // null = default guard
         'unprotected_behavior' => 'allow',
     ],
 
@@ -192,11 +183,11 @@ return [
     */
     'scheduler' => [
         'enabled' => false,
-        'time'    => '06:00',
+        'time' => '06:00',
         'options' => [
-            'clean'            => false,
+            'clean' => false,
             'auto_permissions' => false,
-            'notify'           => true,
+            'notify' => true,
         ],
     ],
 
@@ -213,8 +204,8 @@ return [
     |
     */
     'api' => [
-        'enabled'    => true,
-        'prefix'     => 'acl-api',
+        'enabled' => true,
+        'prefix' => 'acl-api',
         'middleware' => ['api'],
     ],
 
@@ -233,11 +224,10 @@ return [
     |
     */
     'admin_panel' => [
-        'enabled'    => true,
-        'prefix'     => 'acl-admin',
+        'enabled' => true,
+        'prefix' => 'acl-admin',
         'middleware' => ['web', 'auth'],
         'page_title' => 'ACL Manager',
-        'per_page'   => 25,
+        'per_page' => 25,
     ],
-
 ];

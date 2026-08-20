@@ -13,6 +13,16 @@ class RouteScanner
     protected Router $router;
 
     /**
+     * Routes included by prefix (whitelist).
+     */
+    protected array $includedPrefixes;
+
+    /**
+     * Routes included by name (whitelist).
+     */
+    protected array $includedNames;
+
+    /**
      * Routes excluded by prefix.
      */
     protected array $excludedPrefixes;
@@ -36,6 +46,8 @@ class RouteScanner
     public function __construct(Router $router)
     {
         $this->router = $router;
+        $this->includedPrefixes = config('rolepermissionmanager.scanner.included_prefixes', []);
+        $this->includedNames = config('rolepermissionmanager.scanner.included_names', []);
         $this->excludedPrefixes = config('rolepermissionmanager.scanner.excluded_prefixes', []);
         $this->excludedNames = config('rolepermissionmanager.scanner.excluded_names', []);
 
@@ -60,6 +72,21 @@ class RouteScanner
     }
 
     /**
+     * Load custom route files configured in config if they exist.
+     */
+    protected function loadCustomRouteFiles(): void
+    {
+        $files = config('rolepermissionmanager.scanner.route_files', []);
+
+        foreach ($files as $file) {
+            $path = Str::startsWith($file, '/') ? $file : (function_exists('base_path') ? base_path($file) : $file);
+            if (file_exists($path)) {
+                require_once $path;
+            }
+        }
+    }
+
+    /**
      * Scan all registered routes and sync them with the secured_resources table.
      *
      * @param  bool  $clean  Remove deprecated routes from the DB.
@@ -68,6 +95,7 @@ class RouteScanner
      */
     public function scan(bool $clean = false, bool $autoPermissions = false): array
     {
+        $this->loadCustomRouteFiles();
         $routes = $this->getFilteredRoutes();
         $scannedIdentifiers = [];
 
@@ -116,7 +144,7 @@ class RouteScanner
 
         $dynamicRules = AclRegistry::getScannerRules();
 
-        // 1. Dynamic Inclusions (Take precedence over config exclusions)
+        // 1. Dynamic Inclusions (Override exclusions and force inclusion)
         if ($name) {
             foreach ($dynamicRules['includes']['names'] as $pattern) {
                 if (Str::is($pattern, $name)) {
@@ -125,20 +153,53 @@ class RouteScanner
             }
         }
         foreach ($dynamicRules['includes']['prefixes'] as $prefix) {
-            if (Str::is($prefix, $uri) || Str::is($prefix . '/*', $uri) || Str::startsWith($uri, $prefix)) {
+            $cleanPrefix = trim($prefix, '/');
+            $cleanUri = trim($uri, '/');
+            if ($cleanUri === $cleanPrefix || Str::startsWith($cleanUri, $cleanPrefix . '/') || Str::is($prefix, $uri)) {
                 return false;
             }
         }
 
-        // 2. Dynamic DB Exclusions + Config Exclusions by URI prefix
+        // 2. Config Whitelist (if explicitly defined and non-empty)
+        if (!empty($this->includedNames) || !empty($this->includedPrefixes)) {
+            $matchesWhitelist = false;
+
+            if ($name) {
+                foreach ($this->includedNames as $pattern) {
+                    if (Str::is($pattern, $name)) {
+                        $matchesWhitelist = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$matchesWhitelist) {
+                foreach ($this->includedPrefixes as $prefix) {
+                    $cleanPrefix = trim($prefix, '/');
+                    $cleanUri = trim($uri, '/');
+                    if ($cleanUri === $cleanPrefix || Str::startsWith($cleanUri, $cleanPrefix . '/') || Str::is($prefix, $uri)) {
+                        $matchesWhitelist = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$matchesWhitelist) {
+                return true; // Not in config whitelist
+            }
+        }
+
+        // 3. Dynamic DB Exclusions + Config Exclusions by URI prefix
         $allPrefixes = array_merge($this->excludedPrefixes, $dynamicRules['excludes']['prefixes']);
         foreach ($allPrefixes as $prefix) {
-            if (Str::is($prefix, $uri) || Str::is($prefix . '/*', $uri) || Str::startsWith($uri, $prefix)) {
+            $cleanPrefix = trim($prefix, '/');
+            $cleanUri = trim($uri, '/');
+            if ($cleanUri === $cleanPrefix || Str::startsWith($cleanUri, $cleanPrefix . '/') || Str::is($prefix, $uri)) {
                 return true;
             }
         }
 
-        // 3. Dynamic DB Exclusions + Config Exclusions by Route name
+        // 4. Dynamic DB Exclusions + Config Exclusions by Route name
         $allNames = array_merge($this->excludedNames, $dynamicRules['excludes']['names']);
         if ($name) {
             foreach ($allNames as $pattern) {
@@ -148,9 +209,8 @@ class RouteScanner
             }
         }
 
-        // 4. Exclude routes without a controller action (e.g., fallback/redirect routes).
-        $action = $route->getActionName();
-        if ($action === 'Closure' && !$name) {
+        // 5. Exclude fallback routes (e.g., Route::fallback()).
+        if (method_exists($route, 'isFallback') && $route->isFallback()) {
             return true;
         }
 

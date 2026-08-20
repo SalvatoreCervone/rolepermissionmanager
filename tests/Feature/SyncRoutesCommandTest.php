@@ -198,4 +198,27 @@ class SyncRoutesCommandTest extends TestCase
 
         $this->assertNotNull(Permission::findBySlug('users.index'));
     }
+
+    public function test_scanner_with_included_prefixes_whitelist(): void
+    {
+        config()->set('rolepermissionmanager.scanner.included_prefixes', ['users']);
+
+        $scanner = new RouteScanner(app('router'));
+        $summary = $scanner->scan();
+
+        $this->assertContains('users.index', $summary['created']);
+        $this->assertNotContains('about', $summary['created']);
+    }
+
+    public function test_scanner_discovers_unnamed_closure_routes(): void
+    {
+        \Illuminate\Support\Facades\Route::get('/ricercacorsi', fn() => 'courses');
+
+        $scanner = new RouteScanner(app('router'));
+        $summary = $scanner->scan();
+
+        $this->assertContains('GET:ricercacorsi', $summary['created']);
+    }
 }
+
+

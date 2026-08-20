@@ -14,6 +14,8 @@ abstract class TestCase extends Orchestra
     {
         parent::setUp();
 
+        \SalvatoreCervone\RolePermissionManager\Services\AclRegistry::flushAll();
+
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
         // Create a minimal users table for testing.

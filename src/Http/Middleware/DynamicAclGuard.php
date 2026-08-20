@@ -163,16 +163,27 @@ class DynamicAclGuard
         $uri = $route->uri();
         $dynamicRules = AclRegistry::getScannerRules();
 
+        $allIncludedNames = array_merge(
+            config('rolepermissionmanager.scanner.included_names', []),
+            $dynamicRules['includes']['names']
+        );
+        $allIncludedPrefixes = array_merge(
+            config('rolepermissionmanager.scanner.included_prefixes', []),
+            $dynamicRules['includes']['prefixes']
+        );
+
         // 2. Explicit Inclusions (never skip ACL if explicitly included)
         if ($routeName) {
-            foreach ($dynamicRules['includes']['names'] as $pattern) {
+            foreach ($allIncludedNames as $pattern) {
                 if (\Illuminate\Support\Str::is($pattern, $routeName)) {
                     return false;
                 }
             }
         }
-        foreach ($dynamicRules['includes']['prefixes'] as $prefix) {
-            if (\Illuminate\Support\Str::is($prefix, $uri) || \Illuminate\Support\Str::is($prefix . '/*', $uri) || \Illuminate\Support\Str::startsWith($uri, $prefix)) {
+        foreach ($allIncludedPrefixes as $prefix) {
+            $cleanPrefix = trim($prefix, '/');
+            $cleanUri = trim($uri, '/');
+            if ($cleanUri === $cleanPrefix || \Illuminate\Support\Str::startsWith($cleanUri, $cleanPrefix . '/') || \Illuminate\Support\Str::is($prefix, $uri)) {
                 return false;
             }
         }
@@ -196,7 +207,9 @@ class DynamicAclGuard
             $dynamicRules['excludes']['prefixes']
         );
         foreach ($allPrefixes as $prefix) {
-            if (\Illuminate\Support\Str::is($prefix, $uri) || \Illuminate\Support\Str::is($prefix . '/*', $uri) || \Illuminate\Support\Str::startsWith($uri, $prefix)) {
+            $cleanPrefix = trim($prefix, '/');
+            $cleanUri = trim($uri, '/');
+            if ($cleanUri === $cleanPrefix || \Illuminate\Support\Str::startsWith($cleanUri, $cleanPrefix . '/') || \Illuminate\Support\Str::is($prefix, $uri)) {
                 return true;
             }
         }
