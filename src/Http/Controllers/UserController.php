@@ -2,7 +2,6 @@
 
 namespace SalvatoreCervone\RolePermissionManager\Http\Controllers;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -13,30 +12,13 @@ use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
 class UserController extends Controller
 {
     /**
-     * Resolve the configured User model class.
+     * Get the authenticatable model class configured for the ACL system.
      */
     protected function getUserModelClass(): string
     {
-        $configured = config('rolepermissionmanager.models.user');
-        if ($configured && class_exists($configured)) {
-            return $configured;
-        }
-
-        $authModel = config('auth.providers.users.model');
-        if ($authModel && class_exists($authModel)) {
-            return $authModel;
-        }
-
-        if (class_exists('App\\Models\\User')) {
-            return 'App\\Models\\User';
-        }
-
-        if (class_exists('Workbench\\App\\Models\\User')) {
-            return 'Workbench\\App\\Models\\User';
-        }
-
-        throw new \RuntimeException(
-            "User model class not found. Please set 'models.user' in config/rolepermissionmanager.php or 'auth.providers.users.model' in config/auth.php."
+        return config(
+            'rolepermissionmanager.models.user',
+            config('auth.providers.users.model', 'App\\Models\\User')
         );
     }
 
@@ -47,6 +29,50 @@ class UserController extends Controller
     {
         $modelClass = $this->getUserModelClass();
         return (new $modelClass)->newQuery();
+    }
+
+    /**
+     * Format display values for single or multi-column configurations.
+     *
+     * @param  mixed  $user
+     * @param  string|array|null  $field
+     */
+    public static function formatFieldValue($user, $field): string
+    {
+        if (empty($field) || !$user) {
+            return '';
+        }
+
+        if (is_array($field)) {
+            $parts = [];
+            foreach ($field as $f) {
+                $val = $user->{$f} ?? null;
+                if (!is_null($val) && $val !== '') {
+                    $parts[] = $val;
+                }
+            }
+            return !empty($parts) ? implode(' ', $parts) : "User #{$user->getKey()}";
+        }
+
+        return (string) ($user->{$field} ?? "User #{$user->getKey()}");
+    }
+
+    /**
+     * Format table header label for single or multi-column configurations.
+     *
+     * @param  string|array|null  $field
+     */
+    public static function formatFieldHeader($field): string
+    {
+        if (empty($field)) {
+            return '';
+        }
+
+        if (is_array($field)) {
+            return implode(' / ', array_map(fn($f) => ucfirst(str_replace(['_', '-'], ' ', $f)), $field));
+        }
+
+        return ucfirst(str_replace(['_', '-'], ' ', (string) $field));
     }
 
     /**
@@ -122,8 +148,8 @@ class UserController extends Controller
         $results = $query->limit(10)->get()->map(function ($user) use ($displayField, $secondaryField) {
             return [
                 'id'        => $user->getKey(),
-                'label'     => $user->{$displayField} ?? "User #{$user->getKey()}",
-                'sublabel'  => $secondaryField ? ($user->{$secondaryField} ?? '') : '',
+                'label'     => static::formatFieldValue($user, $displayField),
+                'sublabel'  => static::formatFieldValue($user, $secondaryField),
                 'roles'     => $user->roles->pluck('name')->all(),
                 'edit_url'  => route('acl.users.edit', $user->getKey()),
             ];
@@ -185,7 +211,7 @@ class UserController extends Controller
         AclRegistry::flushUserCache($user->getKey());
 
         $displayField = config('rolepermissionmanager.users.display_field', 'name');
-        $userName = $user->{$displayField} ?? "User #{$user->getKey()}";
+        $userName = static::formatFieldValue($user, $displayField);
 
         return redirect()
             ->route('acl.users.edit', $id)

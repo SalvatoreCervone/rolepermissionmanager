@@ -59,8 +59,8 @@ return [
     |
     | - table: The database table name for users (default: 'users').
     | - searchable_fields: Array of column names to search when using autocomplete/filters.
-    | - display_field: Primary column to display (e.g. 'name', 'username').
-    | - secondary_field: Sub-label column to display in autocomplete (e.g. 'email').
+    | - display_field: Primary column(s) to display (string 'name' or array ['name', 'cognome']).
+    | - secondary_field: Sub-label column(s) to display (string 'email' or array ['matricola', 'email']).
     | - per_page: Pagination count for the users list in the admin panel.
     |
     */

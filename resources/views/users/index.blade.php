@@ -47,9 +47,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th>{{ ucfirst($displayField) }}</th>
+                        <th>{{ \SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::formatFieldHeader($displayField) }}</th>
                         @if($secondaryField)
-                            <th>{{ ucfirst($secondaryField) }}</th>
+                            <th>{{ \SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::formatFieldHeader($secondaryField) }}</th>
                         @endif
                         <th>{{ __('acl::users.assigned_roles') }}</th>
                         <th>{{ __('acl::users.direct_permissions') }}</th>
@@ -60,13 +60,13 @@
                     @foreach($users as $user)
                     <tr>
                         <td style="font-weight: 600;">
-                            {{ $user->{$displayField} ?? "User #{$user->getKey()}" }}
+                            {{ \SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::formatFieldValue($user, $displayField) }}
                             @if(method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
                                 <span class="badge badge-post" style="margin-left: 6px;">👑 Super Admin</span>
                             @endif
                         </td>
                         @if($secondaryField)
-                            <td style="color: var(--text-secondary);">{{ $user->{$secondaryField} ?? '—' }}</td>
+                            <td style="color: var(--text-secondary);">{{ \SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::formatFieldValue($user, $secondaryField) ?: '—' }}</td>
                         @endif
                         <td>
                             @forelse($user->roles as $role)

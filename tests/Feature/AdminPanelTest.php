@@ -256,6 +256,27 @@ class AdminPanelTest extends TestCase
         ]);
     }
 
+    public function test_users_supports_array_display_field_and_secondary_field(): void
+    {
+        config([
+            'rolepermissionmanager.users.display_field'   => ['name', 'email'],
+            'rolepermissionmanager.users.secondary_field' => ['email'],
+        ]);
+
+        $user = $this->createUser(['name' => 'Giacomo Puccini', 'email' => 'giacomo@opera.it']);
+
+        $response = $this->get('/acl-admin/users');
+        $response->assertStatus(200);
+        $response->assertSee('Giacomo Puccini giacomo@opera.it');
+
+        $searchResp = $this->get('/acl-admin/users/search?q=Puccini');
+        $searchResp->assertStatus(200);
+        $searchResp->assertJsonFragment([
+            'label'    => 'Giacomo Puccini giacomo@opera.it',
+            'sublabel' => 'giacomo@opera.it',
+        ]);
+    }
+
     public function test_can_update_user_roles_and_direct_permissions(): void
     {
         $user = $this->createUser(['name' => 'Luigi Nono', 'email' => 'luigi@test.com']);

@@ -1,9 +1,13 @@
 @extends('acl::layouts.app')
-@section('title', __('acl::users.edit_access_title', ['name' => $user->name ?? $user->email]) . ' — ' . config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))
+@php
+    $userName = \SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::formatFieldValue($user, $displayField);
+    $userSub = \SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::formatFieldValue($user, $secondaryField);
+@endphp
+@section('title', __('acl::users.edit_access_title', ['name' => $userName]) . ' — ' . config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))
 @section('content')
 <div class="page-header">
     <div>
-        <h2>{{ __('acl::users.edit_access_title', ['name' => $user->name ?? $user->email]) }}</h2>
+        <h2>{{ __('acl::users.edit_access_title', ['name' => $userName]) }}</h2>
         <div class="breadcrumb"><a href="{{ route('acl.users.index') }}" style="color: var(--accent); text-decoration: none;">{{ __('acl::users.title') }}</a> / {{ __('acl::common.edit') }}</div>
     </div>
 </div>
@@ -18,12 +22,12 @@
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
             <div>
-                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::users.name') }}</label>
-                <div style="font-size: 16px; font-weight: 600; margin-top: 4px;">{{ $user->name ?? '—' }}</div>
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ \SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::formatFieldHeader($displayField) }}</label>
+                <div style="font-size: 16px; font-weight: 600; margin-top: 4px;">{{ $userName }}</div>
             </div>
             <div>
-                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::users.email') }}</label>
-                <div style="font-size: 16px; margin-top: 4px;"><code>{{ $user->email ?? '—' }}</code></div>
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ \SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::formatFieldHeader($secondaryField) }}</label>
+                <div style="font-size: 16px; margin-top: 4px;"><code>{{ $userSub ?: '—' }}</code></div>
             </div>
             <div>
                 <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::users.status') }}</label>
