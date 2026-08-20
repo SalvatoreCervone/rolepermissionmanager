@@ -1,26 +1,26 @@
 @extends('acl::layouts.app')
-@section('title', 'Create Permission — ACL Manager')
+@section('title', __('acl::permissions.create_title') . ' — ' . config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))
 @section('content')
 <div class="page-header">
     <div>
-        <h2>Create Permission</h2>
-        <div class="breadcrumb"><a href="{{ route('acl.permissions.index') }}" style="color: var(--accent); text-decoration: none;">Permissions</a> / Create</div>
+        <h2>{{ __('acl::permissions.create_title') }}</h2>
+        <div class="breadcrumb"><a href="{{ route('acl.permissions.index') }}" style="color: var(--accent); text-decoration: none;">{{ __('acl::permissions.title') }}</a> / {{ __('acl::common.create') }}</div>
     </div>
 </div>
 <div class="card">
     <form action="{{ route('acl.permissions.store') }}" method="POST">
         @csrf
         <div class="form-group">
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" class="form-control" value="{{ old('name') }}" placeholder="e.g. Delete Users" required>
+            <label for="name">{{ __('acl::permissions.name') }}</label>
+            <input type="text" id="name" name="name" class="form-control" value="{{ old('name') }}" placeholder="{{ __('acl::permissions.name_placeholder') }}" required>
         </div>
         <div class="form-group">
-            <label for="slug">Slug</label>
-            <input type="text" id="slug" name="slug" class="form-control" value="{{ old('slug') }}" placeholder="e.g. users.delete" required>
+            <label for="slug">{{ __('acl::permissions.slug') }}</label>
+            <input type="text" id="slug" name="slug" class="form-control" value="{{ old('slug') }}" placeholder="{{ __('acl::permissions.slug_placeholder') }}" required>
         </div>
         <div class="form-group">
-            <label for="module">Module</label>
-            <input type="text" id="module" name="module" class="form-control" value="{{ old('module') }}" placeholder="e.g. Users" list="module-list">
+            <label for="module">{{ __('acl::permissions.module') }}</label>
+            <input type="text" id="module" name="module" class="form-control" value="{{ old('module') }}" placeholder="{{ __('acl::permissions.module_placeholder') }}" list="module-list">
             <datalist id="module-list">
                 @foreach($modules as $m)
                     <option value="{{ $m }}">
@@ -28,12 +28,12 @@
             </datalist>
         </div>
         <div class="form-group">
-            <label for="description">Description</label>
-            <textarea id="description" name="description" class="form-control" placeholder="What does this permission allow?">{{ old('description') }}</textarea>
+            <label for="description">{{ __('acl::permissions.description') }}</label>
+            <textarea id="description" name="description" class="form-control" placeholder="{{ __('acl::permissions.desc_placeholder') }}">{{ old('description') }}</textarea>
         </div>
         <div style="display: flex; gap: 12px;">
-            <button type="submit" class="btn btn-primary">Create Permission</button>
-            <a href="{{ route('acl.permissions.index') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">{{ __('acl::permissions.create_title') }}</button>
+            <a href="{{ route('acl.permissions.index') }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
         </div>
     </form>
 </div>

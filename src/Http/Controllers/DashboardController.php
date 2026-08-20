@@ -11,12 +11,19 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $userModelClass = config('rolepermissionmanager.models.user')
-            ?? config('auth.providers.users.model')
-            ?? 'App\\Models\\User';
+        $userModelClass = config('rolepermissionmanager.models.user');
+        if (!$userModelClass || !class_exists($userModelClass)) {
+            $userModelClass = config('auth.providers.users.model');
+        }
+        if ((!$userModelClass || !class_exists($userModelClass)) && class_exists('App\\Models\\User')) {
+            $userModelClass = 'App\\Models\\User';
+        }
+        if ((!$userModelClass || !class_exists($userModelClass)) && class_exists('Workbench\\App\\Models\\User')) {
+            $userModelClass = 'Workbench\\App\\Models\\User';
+        }
 
         $totalUsers = 0;
-        if (class_exists($userModelClass)) {
+        if ($userModelClass && class_exists($userModelClass)) {
             try {
                 $totalUsers = (new $userModelClass)->count();
             } catch (\Throwable $e) {

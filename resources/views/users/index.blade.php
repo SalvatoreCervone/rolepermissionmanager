@@ -1,10 +1,10 @@
 @extends('acl::layouts.app')
-@section('title', 'Users & Access Control — ACL Manager')
+@section('title', __('acl::users.title') . ' — ' . config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))
 @section('content')
 <div class="page-header">
     <div>
-        <h2>👤 Users & Access Control</h2>
-        <div class="breadcrumb">Manage roles and direct permissions for application users</div>
+        <h2>👤 {{ __('acl::users.title') }}</h2>
+        <div class="breadcrumb">{{ __('acl::users.subtitle') }}</div>
     </div>
 </div>
 
@@ -17,21 +17,21 @@
                    name="search"
                    class="form-control"
                    value="{{ request('search') }}"
-                   placeholder="Search user ({{ implode(', ', $searchableFields) }})..."
+                   placeholder="{{ __('acl::users.search_placeholder', ['fields' => implode(', ', $searchableFields)]) }}"
                    autocomplete="off">
             <div id="autocomplete-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 4px; box-shadow: var(--shadow); z-index: 200; max-height: 280px; overflow-y: auto;"></div>
         </div>
 
         <select name="role" class="form-control" onchange="this.form.submit()">
-            <option value="">All Roles</option>
+            <option value="">{{ __('acl::users.all_roles') }}</option>
             @foreach($roles as $r)
                 <option value="{{ $r->slug }}" {{ request('role') === $r->slug ? 'selected' : '' }}>{{ $r->name }}</option>
             @endforeach
         </select>
 
-        <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+        <button type="submit" class="btn btn-secondary btn-sm">{{ __('acl::common.filter') }}</button>
         @if(request()->hasAny(['search', 'role']))
-            <a href="{{ route('acl.users.index') }}" class="btn btn-secondary btn-sm">Clear</a>
+            <a href="{{ route('acl.users.index') }}" class="btn btn-secondary btn-sm">{{ __('acl::common.clear') }}</a>
         @endif
     </form>
 </div>
@@ -40,7 +40,7 @@
     @if($users->isEmpty())
         <div class="empty-state">
             <div class="icon">👤</div>
-            <p>No users found matching the search criteria.</p>
+            <p>{{ __('acl::users.no_users_found') }}</p>
         </div>
     @else
         <div class="table-container">
@@ -51,9 +51,9 @@
                         @if($secondaryField)
                             <th>{{ ucfirst($secondaryField) }}</th>
                         @endif
-                        <th>Assigned Roles</th>
-                        <th>Direct Permissions</th>
-                        <th>Actions</th>
+                        <th>{{ __('acl::users.assigned_roles') }}</th>
+                        <th>{{ __('acl::users.direct_permissions') }}</th>
+                        <th>{{ __('acl::common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>

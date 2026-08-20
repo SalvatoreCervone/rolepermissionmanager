@@ -178,4 +178,17 @@ class AdminPanelTest extends TestCase
         $this->assertTrue($user->hasRole('auditor'));
         $this->assertTrue($user->hasPermission('reports.audit'));
     }
+
+    public function test_admin_panel_renders_italian_when_configured(): void
+    {
+        app()->setLocale('it');
+
+        $response = $this->get('/acl-admin');
+
+        $response->assertStatus(200);
+        $response->assertSee('Panoramica');
+        $response->assertSee('Ruoli');
+        $response->assertSee('Permessi');
+        $response->assertSee('Utenti & Accessi');
+    }
 }

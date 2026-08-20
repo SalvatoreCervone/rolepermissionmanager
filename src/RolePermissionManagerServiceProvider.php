@@ -39,6 +39,7 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
     {
         $this->publishConfig();
         $this->publishMigrations();
+        $this->registerTranslations();
         $this->registerViews();
         $this->registerAdminRoutes();
         $this->registerCommands();
@@ -69,6 +70,24 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../database/migrations/' => database_path('migrations'),
         ], 'rolepermissionmanager-migrations');
+    }
+
+    /**
+     * Register package translations and publish lang files.
+     */
+    protected function registerTranslations(): void
+    {
+        $this->loadTranslationsFrom(__DIR__ . '/../lang', 'acl');
+
+        $this->publishes([
+            __DIR__ . '/../lang' => $this->app->langPath('vendor/acl'),
+        ], 'rolepermissionmanager-lang');
+
+        // Apply package locale override if set.
+        $locale = config('rolepermissionmanager.locale');
+        if ($locale) {
+            $this->app->setLocale($locale);
+        }
     }
 
     /**

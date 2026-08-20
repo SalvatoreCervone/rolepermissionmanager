@@ -47,7 +47,7 @@ class PermissionController extends Controller
 
         return redirect()
             ->route('acl.permissions.index')
-            ->with('success', "Permission '{$validated['name']}' created successfully.");
+            ->with('success', __('acl::permissions.created_success', ['name' => $validated['name']]));
     }
 
     public function edit(int $id)
@@ -74,7 +74,7 @@ class PermissionController extends Controller
 
         return redirect()
             ->route('acl.permissions.edit', $id)
-            ->with('success', "Permission '{$permission->name}' updated successfully.");
+            ->with('success', __('acl::permissions.updated_success', ['name' => $permission->name]));
     }
 
     public function destroy(int $id)
@@ -89,6 +89,6 @@ class PermissionController extends Controller
 
         return redirect()
             ->route('acl.permissions.index')
-            ->with('success', "Permission '{$name}' deleted successfully.");
+            ->with('success', __('acl::permissions.deleted_success', ['name' => $name]));
     }
 }

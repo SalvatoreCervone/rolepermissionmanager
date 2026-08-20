@@ -63,16 +63,34 @@ Routes and functions are registered as **Secured Resources** in the database. Pe
 composer require salvatorecervone/rolepermissionmanager
 ```
 
-### 2. Publish Configuration & Migrations
+### 2. Publish Assets
+
+You can publish all assets at once:
 
 ```bash
-# Publish config file
+php artisan vendor:publish --provider="SalvatoreCervone\RolePermissionManager\RolePermissionManagerServiceProvider"
+```
+
+Or publish individual components using specific tags:
+
+| Component | Publish Command | Target Location |
+|:----------|:----------------|:----------------|
+| **Config** (Required) | `php artisan vendor:publish --tag=rolepermissionmanager-config` | `config/rolepermissionmanager.php` |
+| **Migrations** (Required) | `php artisan vendor:publish --tag=rolepermissionmanager-migrations` | `database/migrations/` |
+| **Language Files** (Optional) | `php artisan vendor:publish --tag=rolepermissionmanager-lang` | `lang/vendor/acl/` |
+| **Blade Views** (Optional) | `php artisan vendor:publish --tag=rolepermissionmanager-views` | `resources/views/vendor/acl/` |
+
+```bash
+# 1. Config file (custom table names, cache TTL, super admin, locale, etc.)
 php artisan vendor:publish --tag=rolepermissionmanager-config
 
-# Publish migrations
+# 2. Database migrations (7 ACL tables)
 php artisan vendor:publish --tag=rolepermissionmanager-migrations
 
-# (Optional) Publish admin views for custom styling
+# 3. (Optional) Language files for custom translations (EN & IT included)
+php artisan vendor:publish --tag=rolepermissionmanager-lang
+
+# 4. (Optional) Admin panel Blade views for custom branding & UI styling
 php artisan vendor:publish --tag=rolepermissionmanager-views
 ```
 

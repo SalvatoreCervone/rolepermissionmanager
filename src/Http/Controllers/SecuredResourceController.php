@@ -74,7 +74,7 @@ class SecuredResourceController extends Controller
 
         return redirect()
             ->route('acl.resources.edit', $id)
-            ->with('success', "Resource '{$resource->identifier}' updated successfully.");
+            ->with('success', __('acl::resources.updated_success', ['identifier' => $resource->identifier]));
     }
 
     public function sync()
@@ -84,7 +84,7 @@ class SecuredResourceController extends Controller
 
         return redirect()
             ->route('acl.dashboard')
-            ->with('success', 'Route sync completed successfully.')
+            ->with('success', __('acl::resources.sync_success'))
             ->with('sync_output', $output);
     }
 }

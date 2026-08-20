@@ -39,7 +39,7 @@ class RoleController extends Controller
 
         return redirect()
             ->route('acl.roles.index')
-            ->with('success', "Role '{$validated['name']}' created successfully.");
+            ->with('success', __('acl::roles.created_success', ['name' => $validated['name']]));
     }
 
     public function edit(int $id)
@@ -73,7 +73,7 @@ class RoleController extends Controller
 
         return redirect()
             ->route('acl.roles.edit', $id)
-            ->with('success', "Role '{$role->name}' updated successfully.");
+            ->with('success', __('acl::roles.updated_success', ['name' => $role->name]));
     }
 
     public function destroy(int $id)
@@ -87,6 +87,6 @@ class RoleController extends Controller
 
         return redirect()
             ->route('acl.roles.index')
-            ->with('success', "Role '{$name}' deleted successfully.");
+            ->with('success', __('acl::roles.deleted_success', ['name' => $name]));
     }
 }

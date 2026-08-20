@@ -17,9 +17,27 @@ class UserController extends Controller
      */
     protected function getUserModelClass(): string
     {
-        return config('rolepermissionmanager.models.user')
-            ?? config('auth.providers.users.model')
-            ?? 'App\\Models\\User';
+        $configured = config('rolepermissionmanager.models.user');
+        if ($configured && class_exists($configured)) {
+            return $configured;
+        }
+
+        $authModel = config('auth.providers.users.model');
+        if ($authModel && class_exists($authModel)) {
+            return $authModel;
+        }
+
+        if (class_exists('App\\Models\\User')) {
+            return 'App\\Models\\User';
+        }
+
+        if (class_exists('Workbench\\App\\Models\\User')) {
+            return 'Workbench\\App\\Models\\User';
+        }
+
+        throw new \RuntimeException(
+            "User model class not found. Please set 'models.user' in config/rolepermissionmanager.php or 'auth.providers.users.model' in config/auth.php."
+        );
     }
 
     /**
@@ -171,6 +189,6 @@ class UserController extends Controller
 
         return redirect()
             ->route('acl.users.edit', $id)
-            ->with('success', "Roles and permissions updated for '{$userName}'.");
+            ->with('success', __('acl::users.updated_success', ['name' => $userName]));
     }
 }

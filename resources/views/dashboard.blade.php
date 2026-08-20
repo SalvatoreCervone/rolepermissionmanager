@@ -1,12 +1,12 @@
 @extends('acl::layouts.app')
 
-@section('title', 'Dashboard — ACL Manager')
+@section('title', __('acl::dashboard.title') . ' — ' . config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))
 
 @section('content')
 <div class="page-header">
     <div>
-        <h2>Dashboard</h2>
-        <div class="breadcrumb">Overview of your ACL system</div>
+        <h2>{{ __('acl::dashboard.title') }}</h2>
+        <div class="breadcrumb">{{ __('acl::dashboard.subtitle') }}</div>
     </div>
 </div>
 
@@ -14,49 +14,49 @@
     <div class="stat-card">
         <div class="stat-icon">👤</div>
         <div class="stat-value">{{ $stats['total_users'] }}</div>
-        <div class="stat-label">Users</div>
+        <div class="stat-label">{{ __('acl::dashboard.stat_users') }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">👥</div>
         <div class="stat-value">{{ $stats['total_roles'] }}</div>
-        <div class="stat-label">Roles</div>
+        <div class="stat-label">{{ __('acl::dashboard.stat_roles') }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">🔑</div>
         <div class="stat-value">{{ $stats['total_permissions'] }}</div>
-        <div class="stat-label">Permissions</div>
+        <div class="stat-label">{{ __('acl::dashboard.stat_permissions') }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">🛡️</div>
         <div class="stat-value">{{ $stats['protected_resources'] }}</div>
-        <div class="stat-label">Protected Routes</div>
+        <div class="stat-label">{{ __('acl::dashboard.stat_protected') }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">🌐</div>
         <div class="stat-value">{{ $stats['public_resources'] }}</div>
-        <div class="stat-label">Public Routes</div>
+        <div class="stat-label">{{ __('acl::dashboard.stat_public') }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">⚠️</div>
         <div class="stat-value">{{ $stats['unlinked_resources'] }}</div>
-        <div class="stat-label">Unlinked (No Permissions)</div>
+        <div class="stat-label">{{ __('acl::dashboard.stat_unlinked') }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">📦</div>
         <div class="stat-value">{{ $stats['deprecated_resources'] }}</div>
-        <div class="stat-label">Deprecated Routes</div>
+        <div class="stat-label">{{ __('acl::dashboard.stat_deprecated') }}</div>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <h3>🕐 Recently Updated Resources</h3>
-        <a href="{{ route('acl.resources.index') }}" class="btn btn-secondary btn-sm">View All →</a>
+        <h3>🕐 {{ __('acl::dashboard.recent_resources') }}</h3>
+        <a href="{{ route('acl.resources.index') }}" class="btn btn-secondary btn-sm">{{ __('acl::dashboard.view_all') }}</a>
     </div>
     @if($recentResources->isEmpty())
         <div class="empty-state">
             <div class="icon">🛤️</div>
-            <p>No resources found. Run <code>php artisan acl:sync</code> or click "Sync Routes" to discover your routes.</p>
+            <p>{{ __('acl::dashboard.no_resources') }}</p>
         </div>
     @else
         <div class="table-container">

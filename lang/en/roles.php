@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'title'              => 'Roles',
+    'subtitle'           => 'Manage user roles and their associated permissions',
+    'new_role'           => '+ New Role',
+    'create_title'       => 'Create Role',
+    'edit_title'         => 'Edit Role: :name',
+    'role_details'       => 'Role Details',
+    'assign_permissions' => 'Assign Permissions',
+    'name'               => 'Name',
+    'name_placeholder'   => 'e.g. Administrator',
+    'slug'               => 'Slug',
+    'slug_placeholder'   => 'e.g. admin',
+    'description'        => 'Description',
+    'desc_placeholder'   => 'Brief description of this role...',
+    'permissions'        => 'Permissions',
+    'permissions_count'  => ':count permissions',
+    'no_roles_found'     => 'No roles found. Create your first role to get started.',
+    'no_permissions_yet' => 'No permissions available. Create one first.',
+    'delete_confirm'     => "Are you sure you want to delete the role ':name'?",
+    'created_success'    => "Role ':name' created successfully.",
+    'updated_success'    => "Role ':name' updated successfully.",
+    'deleted_success'    => "Role ':name' deleted successfully.",
+];

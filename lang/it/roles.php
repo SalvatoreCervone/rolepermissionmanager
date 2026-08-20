@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'title'              => 'Ruoli',
+    'subtitle'           => 'Gestisci i ruoli utente e i permessi associati',
+    'new_role'           => '+ Nuovo Ruolo',
+    'create_title'       => 'Crea Ruolo',
+    'edit_title'         => 'Modifica Ruolo: :name',
+    'role_details'       => 'Dettagli Ruolo',
+    'assign_permissions' => 'Assegna Permessi',
+    'name'               => 'Nome',
+    'name_placeholder'   => 'es. Amministratore',
+    'slug'               => 'Slug',
+    'slug_placeholder'   => 'es. admin',
+    'description'        => 'Descrizione',
+    'desc_placeholder'   => 'Breve descrizione di questo ruolo...',
+    'permissions'        => 'Permessi',
+    'permissions_count'  => ':count permessi',
+    'no_roles_found'     => 'Nessun ruolo trovato. Crea il tuo primo ruolo per iniziare.',
+    'no_permissions_yet' => 'Nessun permesso disponibile. Creane prima uno.',
+    'delete_confirm'     => "Sei sicuro di voler eliminare il ruolo ':name'?",
+    'created_success'    => "Ruolo ':name' creato con successo.",
+    'updated_success'    => "Ruolo ':name' aggiornato con successo.",
+    'deleted_success'    => "Ruolo ':name' eliminato con successo.",
+];

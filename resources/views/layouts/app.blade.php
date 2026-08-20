@@ -466,30 +466,30 @@
             <div class="subtitle">Role & Permission Manager</div>
         </div>
         <nav class="sidebar-nav">
-            <div class="nav-section">Overview</div>
+            <div class="nav-section">{{ __('acl::nav.overview') }}</div>
             <a href="{{ route('acl.dashboard') }}" class="{{ request()->routeIs('acl.dashboard') ? 'active' : '' }}">
-                <span class="icon">📊</span> Dashboard
+                <span class="icon">📊</span> {{ __('acl::nav.dashboard') }}
             </a>
 
-            <div class="nav-section">Manage</div>
+            <div class="nav-section">{{ __('acl::nav.manage') }}</div>
             <a href="{{ route('acl.users.index') }}" class="{{ request()->routeIs('acl.users.*') ? 'active' : '' }}">
-                <span class="icon">👤</span> Users & Access
+                <span class="icon">👤</span> {{ __('acl::nav.users') }}
             </a>
             <a href="{{ route('acl.roles.index') }}" class="{{ request()->routeIs('acl.roles.*') ? 'active' : '' }}">
-                <span class="icon">👥</span> Roles
+                <span class="icon">👥</span> {{ __('acl::nav.roles') }}
             </a>
             <a href="{{ route('acl.permissions.index') }}" class="{{ request()->routeIs('acl.permissions.*') ? 'active' : '' }}">
-                <span class="icon">🔑</span> Permissions
+                <span class="icon">🔑</span> {{ __('acl::nav.permissions') }}
             </a>
             <a href="{{ route('acl.resources.index') }}" class="{{ request()->routeIs('acl.resources.*') ? 'active' : '' }}">
-                <span class="icon">🛤️</span> Routes / Resources
+                <span class="icon">🛤️</span> {{ __('acl::nav.resources') }}
             </a>
 
-            <div class="nav-section">Actions</div>
+            <div class="nav-section">{{ __('acl::nav.actions') }}</div>
             <form action="{{ route('acl.resources.sync') }}" method="POST" style="padding: 0 0;">
                 @csrf
                 <button type="submit" class="btn btn-success btn-sm" style="width: calc(100% - 24px); margin: 0 12px;">
-                    🔄 Sync Routes
+                    🔄 {{ __('acl::nav.sync_routes') }}
                 </button>
             </form>
         </nav>

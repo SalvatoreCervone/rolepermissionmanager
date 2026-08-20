@@ -4,6 +4,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Localization / Language
+    |--------------------------------------------------------------------------
+    |
+    | Default language for the ACL Admin Panel and package messages.
+    | Supported out of the box: 'en' (English - default), 'it' (Italian).
+    | Set to null to inherit the application's locale from config('app.locale').
+    |
+    */
+    'locale' => 'en',
+
+    /*
+    |--------------------------------------------------------------------------
     | Table Names
     |--------------------------------------------------------------------------
     |
