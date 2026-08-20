@@ -79,6 +79,12 @@ class DynamicAclGuard
             return $next($request);
         }
 
+        // If the resource is reserved exclusively for Super Admin, deny non-super-admins immediately.
+        if (!empty($rule->is_super_admin_only)) {
+            $identifier = $routeName ?? $routeSignature;
+            throw UnauthorizedException::forResource($identifier);
+        }
+
         // 8. Check permissions based on the operator (AND / OR).
         $requiredPermissions = $rule->permission_slugs ?? [];
 

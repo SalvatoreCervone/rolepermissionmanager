@@ -23,9 +23,10 @@ class SecuredResourceController extends Controller
         // Filters
         if ($request->filled('status')) {
             match ($request->get('status')) {
-                'public'    => $query->where('is_public', true),
-                'protected' => $query->where('is_public', false),
-                default     => null,
+                'public'      => $query->where('is_public', true),
+                'protected'   => $query->where('is_public', false)->where('is_super_admin_only', false),
+                'super_admin' => $query->where('is_super_admin_only', true),
+                default       => null,
             };
         }
         if ($request->filled('search')) {
@@ -61,23 +62,25 @@ class SecuredResourceController extends Controller
         $permissionsTable = config('rolepermissionmanager.tables.permissions', 'acl_permissions');
 
         $validated = $request->validate([
-            'identifier'        => "required|string|max:255|unique:{$resourcesTable},identifier",
-            'description'       => 'nullable|string|max:255',
-            'controller_action' => 'nullable|string|max:255',
-            'is_public'         => 'boolean',
-            'operator'          => 'required|in:OR,AND',
-            'permissions'       => 'nullable|array',
-            'permissions.*'     => "integer|exists:{$permissionsTable},id",
+            'identifier'          => "required|string|max:255|unique:{$resourcesTable},identifier",
+            'description'         => 'nullable|string|max:255',
+            'controller_action'   => 'nullable|string|max:255',
+            'is_public'           => 'boolean',
+            'is_super_admin_only' => 'boolean',
+            'operator'            => 'required|in:OR,AND',
+            'permissions'         => 'nullable|array',
+            'permissions.*'       => "integer|exists:{$permissionsTable},id",
         ]);
 
         $resource = SecuredResource::create([
-            'identifier'        => trim($validated['identifier']),
-            'type'              => SecuredResource::TYPE_CUSTOM,
-            'description'       => $validated['description'] ?? null,
-            'controller_action' => $validated['controller_action'] ?? null,
-            'is_public'         => $validated['is_public'] ?? false,
-            'operator'          => $validated['operator'],
-            'is_deprecated'     => false,
+            'identifier'          => trim($validated['identifier']),
+            'type'                => SecuredResource::TYPE_CUSTOM,
+            'description'         => $validated['description'] ?? null,
+            'controller_action'   => $validated['controller_action'] ?? null,
+            'is_public'           => $validated['is_public'] ?? false,
+            'is_super_admin_only' => $validated['is_super_admin_only'] ?? false,
+            'operator'            => $validated['operator'],
+            'is_deprecated'       => false,
         ]);
 
         if (!empty($validated['permissions'])) {
@@ -112,21 +115,23 @@ class SecuredResourceController extends Controller
         $permissionsTable = config('rolepermissionmanager.tables.permissions', 'acl_permissions');
 
         $validated = $request->validate([
-            'identifier'        => "required|string|max:255|unique:{$resourcesTable},identifier,{$id}",
-            'description'       => 'nullable|string|max:255',
-            'controller_action' => 'nullable|string|max:255',
-            'is_public'         => 'boolean',
-            'operator'          => 'required|in:OR,AND',
-            'permissions'       => 'nullable|array',
-            'permissions.*'     => "integer|exists:{$permissionsTable},id",
+            'identifier'          => "required|string|max:255|unique:{$resourcesTable},identifier,{$id}",
+            'description'         => 'nullable|string|max:255',
+            'controller_action'   => 'nullable|string|max:255',
+            'is_public'           => 'boolean',
+            'is_super_admin_only' => 'boolean',
+            'operator'            => 'required|in:OR,AND',
+            'permissions'         => 'nullable|array',
+            'permissions.*'       => "integer|exists:{$permissionsTable},id",
         ]);
 
         $resource->update([
-            'identifier'        => trim($validated['identifier']),
-            'description'       => $validated['description'] ?? null,
-            'controller_action' => $validated['controller_action'] ?? null,
-            'is_public'         => $validated['is_public'] ?? false,
-            'operator'          => $validated['operator'],
+            'identifier'          => trim($validated['identifier']),
+            'description'         => $validated['description'] ?? null,
+            'controller_action'   => $validated['controller_action'] ?? null,
+            'is_public'           => $validated['is_public'] ?? false,
+            'is_super_admin_only' => $validated['is_super_admin_only'] ?? false,
+            'operator'            => $validated['operator'],
         ]);
 
         $resource->permissions()->sync($validated['permissions'] ?? []);

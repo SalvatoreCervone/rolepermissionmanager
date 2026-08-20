@@ -68,10 +68,11 @@ class RouteResourceController extends Controller
         }
         if ($request->filled('status')) {
             match ($request->get('status')) {
-                'public'     => $query->where('is_public', true)->where('is_deprecated', false),
-                'protected'  => $query->where('is_public', false)->where('is_deprecated', false),
-                'deprecated' => $query->where('is_deprecated', true),
-                default      => null,
+                'public'      => $query->where('is_public', true)->where('is_deprecated', false),
+                'protected'   => $query->where('is_public', false)->where('is_super_admin_only', false)->where('is_deprecated', false),
+                'super_admin' => $query->where('is_super_admin_only', true)->where('is_deprecated', false),
+                'deprecated'  => $query->where('is_deprecated', true),
+                default       => null,
             };
         }
         if ($request->filled('search')) {
@@ -109,15 +110,17 @@ class RouteResourceController extends Controller
         $resource = SecuredResource::routes()->findOrFail($id);
 
         $validated = $request->validate([
-            'is_public'     => 'boolean',
-            'operator'      => 'required|in:OR,AND',
-            'permissions'   => 'nullable|array',
-            'permissions.*' => 'integer|exists:' . config('rolepermissionmanager.tables.permissions', 'acl_permissions') . ',id',
+            'is_public'           => 'boolean',
+            'is_super_admin_only' => 'boolean',
+            'operator'            => 'required|in:OR,AND',
+            'permissions'         => 'nullable|array',
+            'permissions.*'       => 'integer|exists:' . config('rolepermissionmanager.tables.permissions', 'acl_permissions') . ',id',
         ]);
 
         $resource->update([
-            'is_public' => $validated['is_public'] ?? false,
-            'operator'  => $validated['operator'],
+            'is_public'           => $validated['is_public'] ?? false,
+            'is_super_admin_only' => $validated['is_super_admin_only'] ?? false,
+            'operator'            => $validated['operator'],
         ]);
 
         $resource->permissions()->sync($validated['permissions'] ?? []);

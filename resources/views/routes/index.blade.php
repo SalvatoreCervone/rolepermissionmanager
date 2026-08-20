@@ -25,6 +25,7 @@
             <option value="">{{ __('acl::routes.all_status') }}</option>
             <option value="public" {{ request('status') === 'public' ? 'selected' : '' }}>🌐 {{ __('acl::routes.public') }}</option>
             <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🛡️ {{ __('acl::routes.protected') }}</option>
+            <option value="super_admin" {{ request('status') === 'super_admin' ? 'selected' : '' }}>👑 {{ __('acl::routes.super_admin') }}</option>
             <option value="deprecated" {{ request('status') === 'deprecated' ? 'selected' : '' }}>📦 {{ __('acl::routes.deprecated') }}</option>
             <option value="skipped" {{ request('status') === 'skipped' ? 'selected' : '' }}>⏭️ {{ __('acl::routes.skipped') }}</option>
         </select>
@@ -100,6 +101,8 @@
                         <td>
                             @if($route->is_deprecated)
                                 <span class="badge badge-deprecated">{{ __('acl::routes.deprecated') }}</span>
+                            @elseif($route->is_super_admin_only)
+                                <span class="badge" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">👑 {{ __('acl::routes.super_admin') }}</span>
                             @elseif($route->is_public)
                                 <span class="badge badge-public">{{ __('acl::routes.public') }}</span>
                             @else

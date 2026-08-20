@@ -50,6 +50,17 @@
         </div>
 
         <div class="form-group">
+            <label>{{ __('acl::routes.super_admin_only') }}</label>
+            <div class="toggle-container">
+                <input type="hidden" name="is_super_admin_only" value="{{ old('is_super_admin_only', $resource->is_super_admin_only) ? '1' : '0' }}">
+                <div class="toggle {{ old('is_super_admin_only', $resource->is_super_admin_only) ? 'active' : '' }}"></div>
+                <span class="toggle-label">
+                    {{ __('acl::routes.super_admin_only_help') }}
+                </span>
+            </div>
+        </div>
+
+        <div class="form-group">
             <label for="operator">{{ __('acl::routes.operator_label') }}</label>
             <select id="operator" name="operator" class="form-control" style="max-width: 350px;">
                 <option value="OR" {{ old('operator', $resource->operator) === 'OR' ? 'selected' : '' }}>

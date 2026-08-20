@@ -39,7 +39,7 @@ When business rules change, developers must edit controllers, routes, commit, an
 - 🛡️ **Single Dynamic Interceptor** — `DynamicAclGuard` middleware evaluates requests against cached ACL rules
 - ⚡ **High Performance & Low Latency** — Complete cache layer (Redis/File/Memory) with automatic invalidation on Eloquent events
 - 🎛️ **AND / OR Permission Operators** — Choose whether a resource requires _all_ or _at least one_ of the linked permissions
-- 👑 **Super Admin Bypass** — Configurable super admin role that bypasses all permission checks automatically
+- 👑 **Super Admin Bypass & Dedicated Protection** — Configurable super admin role that bypasses checks, plus a single-click toggle to reserve any route/resource exclusively for Super Admins
 - 👤 **User Access Management** — Manage user roles and direct permissions with live autocomplete search
 - 🖥️ **Built-in Web Admin Panel** — Modern, dark-themed dashboard for managing Roles, Permissions, HTTP Routes, Custom Resources, and Users
 - 🎨 **Blade Directives** — `@role`, `@haspermission`, `@canRoute`, and `@canResource` for views

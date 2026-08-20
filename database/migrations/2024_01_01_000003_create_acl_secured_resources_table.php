@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('method', 10)->nullable()->index()->comment('HTTP verb: GET, POST, PUT, PATCH, DELETE (null for custom)');
             $table->string('uri')->nullable()->comment('Route URI pattern e.g. api/v1/users/{id} (null for custom)');
             $table->boolean('is_public')->default(false)->comment('If true, bypasses all auth checks');
+            $table->boolean('is_super_admin_only')->default(false)->comment('If true, accessible exclusively by Super Admin');
             $table->enum('operator', ['OR', 'AND'])->default('OR')->comment('Logic for evaluating multiple permissions');
             $table->boolean('is_deprecated')->default(false)->comment('Flagged when route no longer exists in code');
             $table->timestamps();

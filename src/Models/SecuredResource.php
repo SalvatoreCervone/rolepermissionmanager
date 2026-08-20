@@ -13,8 +13,9 @@ class SecuredResource extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'is_public'     => 'boolean',
-        'is_deprecated' => 'boolean',
+        'is_public'           => 'boolean',
+        'is_super_admin_only' => 'boolean',
+        'is_deprecated'       => 'boolean',
     ];
 
     /**
@@ -104,6 +105,14 @@ class SecuredResource extends Model
     }
 
     /**
+     * Scope to resources accessible exclusively by Super Admin.
+     */
+    public function scopeSuperAdminOnly($query)
+    {
+        return $query->where('is_super_admin_only', true);
+    }
+
+    /**
      * Check if this resource is an HTTP route.
      */
     public function isRoute(): bool
@@ -117,6 +126,14 @@ class SecuredResource extends Model
     public function isCustom(): bool
     {
         return $this->type === self::TYPE_CUSTOM;
+    }
+
+    /**
+     * Check if this resource is accessible exclusively by Super Admin.
+     */
+    public function isSuperAdminOnly(): bool
+    {
+        return (bool) $this->is_super_admin_only;
     }
 
     /*

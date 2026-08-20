@@ -106,6 +106,11 @@ class AclRegistry
             return true;
         }
 
+        // If resource is reserved exclusively for Super Admin, deny non-super-admins
+        if (!empty($rule->is_super_admin_only)) {
+            return false;
+        }
+
         $requiredPermissions = $rule->permission_slugs ?? [];
         if (empty($requiredPermissions)) {
             $unassignedBehavior = config('rolepermissionmanager.middleware.unassigned_permissions_behavior', 'allow');
@@ -151,7 +156,7 @@ class AclRegistry
     /**
      * Get or build the full resources map from cache.
      *
-     * Structure: [identifier => [is_public, operator, permission_slugs]]
+     * Structure: [identifier => [is_public, is_super_admin_only, operator, permission_slugs]]
      */
     public static function getResourcesMap(): array
     {
@@ -189,9 +194,10 @@ class AclRegistry
 
         foreach ($resources as $resource) {
             $entry = [
-                'is_public'        => $resource->is_public,
-                'operator'         => $resource->operator,
-                'permission_slugs' => $resource->permissions->pluck('slug')->all(),
+                'is_public'           => $resource->is_public,
+                'is_super_admin_only' => (bool) $resource->is_super_admin_only,
+                'operator'            => $resource->operator,
+                'permission_slugs'    => $resource->permissions->pluck('slug')->all(),
             ];
 
             $map[$resource->identifier] = $entry;

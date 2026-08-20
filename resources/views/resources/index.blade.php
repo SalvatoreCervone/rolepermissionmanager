@@ -16,6 +16,7 @@
             <option value="">{{ __('acl::resources.all_status') }}</option>
             <option value="public" {{ request('status') === 'public' ? 'selected' : '' }}>🌐 {{ __('acl::resources.public') }}</option>
             <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🛡️ {{ __('acl::resources.protected') }}</option>
+            <option value="super_admin" {{ request('status') === 'super_admin' ? 'selected' : '' }}>👑 {{ __('acl::routes.super_admin') }}</option>
         </select>
         <button type="submit" class="btn btn-secondary btn-sm">{{ __('acl::common.filter') }}</button>
         @if(request()->hasAny(['search', 'status']))
@@ -56,7 +57,9 @@
                             @endif
                         </td>
                         <td>
-                            @if($resource->is_public)
+                            @if($resource->is_super_admin_only)
+                                <span class="badge" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">👑 {{ __('acl::routes.super_admin') }}</span>
+                            @elseif($resource->is_public)
                                 <span class="badge badge-public">{{ __('acl::resources.public') }}</span>
                             @else
                                 <span class="badge badge-protected">{{ __('acl::resources.protected') }}</span>
