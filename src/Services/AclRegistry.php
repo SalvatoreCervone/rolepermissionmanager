@@ -398,10 +398,14 @@ class AclRegistry
             }
         }
 
-        // 4. Check route access if 'route' is specified
-        if (isset($item['route']) && is_string($item['route']) && method_exists($user, 'canAccessRoute')) {
-            if (!$user->canAccessRoute($item['route'])) {
-                return false;
+        // 4. Check route or url access if 'route', 'url', or 'to' is specified
+        $target = $item['route'] ?? $item['url'] ?? $item['to'] ?? null;
+        if ($target && is_string($target) && method_exists($user, 'canAccessRoute')) {
+            // Ignore external URLs or anchors
+            if (!\Illuminate\Support\Str::startsWith($target, ['http://', 'https://', '#', 'javascript:', 'mailto:', 'tel:'])) {
+                if (!$user->canAccessRoute($target)) {
+                    return false;
+                }
             }
         }
 

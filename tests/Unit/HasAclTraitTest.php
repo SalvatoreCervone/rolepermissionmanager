@@ -311,6 +311,45 @@ class HasAclTraitTest extends TestCase
         $user->assignRole('super-admin');
         $this->assertCount(2, $user->filterNavigation($menu));
     }
+
+    public function test_filter_navigation_by_url_checking_secured_resource(): void
+    {
+        $user = $this->createUser();
+        $perm = Permission::create(['name' => 'Scrivi Corsi', 'slug' => 'corsi.scrivi']);
+
+        $resource = \SalvatoreCervone\RolePermissionManager\Models\SecuredResource::create([
+            'identifier'        => 'GET:ricercacorsi',
+            'controller_action' => 'Closure',
+            'method'            => 'GET',
+            'uri'               => 'ricercacorsi',
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+        $resource->permissions()->attach($perm->id);
+        AclRegistry::refreshCache();
+
+        $menu = [
+            [
+                'label' => 'Ricerca corso',
+                'url'   => '/ricercacorsi',
+            ],
+            [
+                'label' => 'Home',
+                'url'   => '/home',
+            ],
+        ];
+
+        // User without permission: cannot see 'Ricerca corso'
+        $filtered = $user->filterNavigation($menu);
+        $this->assertCount(1, $filtered);
+        $this->assertEquals('Home', $filtered[0]['label']);
+
+        // User granted 'corsi.scrivi': can see both
+        $user->givePermissionTo('corsi.scrivi');
+        $filteredAfter = $user->filterNavigation($menu);
+        $this->assertCount(2, $filteredAfter);
+    }
 }
+
 
 

@@ -254,7 +254,27 @@ trait HasAcl
      */
     public function canAccessRoute(string $routeNameOrSignature): bool
     {
-        $rule = AclRegistry::getResourceRule($routeNameOrSignature, $routeNameOrSignature);
+        $clean = trim($routeNameOrSignature, '/');
+
+        // 1. Try direct registry lookup by identifier or GET:uri signature
+        $rule = AclRegistry::getResourceRule($routeNameOrSignature, $routeNameOrSignature)
+            ?? AclRegistry::getResourceRule($clean, 'GET:' . $clean)
+            ?? AclRegistry::getResourceRule('GET:' . $clean, $clean);
+
+        // 2. Try matching through the Laravel Router if route path was given (e.g. '/ricercacorsi')
+        if (!$rule && function_exists('app') && app()->bound('router')) {
+            try {
+                $request = \Illuminate\Http\Request::create($routeNameOrSignature, 'GET');
+                $matched = app('router')->getRoutes()->match($request);
+                if ($matched) {
+                    $name = $matched->getName();
+                    $sig = ($matched->methods()[0] ?? 'GET') . ':' . $matched->uri();
+                    $rule = AclRegistry::getResourceRule($name, $sig);
+                }
+            } catch (\Throwable $e) {
+                // Route could not be matched by router
+            }
+        }
 
         if (!$rule) {
             return true; // Route is not ACL-managed.
