@@ -10,24 +10,23 @@ A modern, dynamic, database-driven Role & Permission Manager for Laravel that co
 
 ---
 
-## 💡 The Problem with Traditional RBAC (e.g. Spatie Permission)
+## 💡 100% Automatic — Zero Code Changes & Coexistence
 
 In traditional authorization setups, permissions are hardcoded into route definitions, controller constructors, or method calls:
 
 ```php
-// ❌ Traditional approach: Hardcoded permissions in code
+// ❌ Hardcoded permissions in code
 Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])
     ->middleware('permission:delete-invoices');
 ```
 
-When business rules change (e.g. *"Only Finance Supervisors can delete invoices now"*, or *"Split permission into draft vs finalized invoices"*), you must:
-1. Modify source code files across controllers and routes
-2. Commit changes to Git
-3. Create a pull request, run CI/CD, and deploy a new release to production
+When business rules change, developers must edit controllers, routes, commit, and deploy.
 
-**RolePermissionManager eliminates this bottleneck entirely.**
+**RolePermissionManager eliminates this entirely:**
 
-Routes and functions are registered as **Secured Resources** in the database. Permissions, roles, and route access rules are mapped dynamically and cached in memory/Redis. You can change any permission rule from the built-in Web Admin Panel or database in **seconds — with zero code changes and zero downtime.**
+- ⚡ **Zero Code Modifications** — No need to add traits, modify controllers, or annotate routes.
+- 🛡️ **Coexists with Existing Systems** — No need to remove or refactor your existing roles, permissions, or database tables. RolePermissionManager uses isolated tables (`acl_*`) and a non-intrusive dynamic interceptor.
+- 🌐 **Instant Runtime Updates** — Change any permission rule from the built-in Web Admin Panel in seconds with **zero code changes and zero downtime.**
 
 ---
 
@@ -39,7 +38,7 @@ Routes and functions are registered as **Secured Resources** in the database. Pe
 - ⏰ **Automated Scheduler** — Configurable daily route synchronization to catch new endpoints
 - 🛡️ **Single Dynamic Interceptor** — `DynamicAclGuard` middleware evaluates requests against cached ACL rules
 - ⚡ **High Performance & Low Latency** — Complete cache layer (Redis/File/Memory) with automatic invalidation on Eloquent events
-- 🎛️ **AND / OR Permission Operators** — Choose whether a resource requires *all* or *at least one* of the linked permissions
+- 🎛️ **AND / OR Permission Operators** — Choose whether a resource requires _all_ or _at least one_ of the linked permissions
 - 👑 **Super Admin Bypass** — Configurable super admin role that bypasses all permission checks automatically
 - 👤 **User Access Management** — Manage user roles and direct permissions with live autocomplete search
 - 🖥️ **Built-in Web Admin Panel** — Modern, dark-themed dashboard for managing Roles, Permissions, HTTP Routes, Custom Resources, and Users
@@ -74,13 +73,13 @@ php artisan vendor:publish --provider="SalvatoreCervone\RolePermissionManager\Ro
 
 Or publish individual components using specific tags:
 
-| Component | Publish Command | Target Location |
-|:----------|:----------------|:----------------|
-| **Config** (Required) | `php artisan vendor:publish --tag=rolepermissionmanager-config` | `config/rolepermissionmanager.php` |
-| **Migrations** (Required) | `php artisan vendor:publish --tag=rolepermissionmanager-migrations` | `database/migrations/` |
-| **Language Files** (Optional) | `php artisan vendor:publish --tag=rolepermissionmanager-lang` | `lang/vendor/acl/` |
-| **Blade Views** (Optional) | `php artisan vendor:publish --tag=rolepermissionmanager-views` | `resources/views/vendor/acl/` |
-| **Routes** (Optional) | `php artisan vendor:publish --tag=rolepermissionmanager-routes` | `routes/acl-web.php` & `routes/acl-api.php` |
+| Component                     | Publish Command                                                     | Target Location                             |
+| :---------------------------- | :------------------------------------------------------------------ | :------------------------------------------ |
+| **Config** (Required)         | `php artisan vendor:publish --tag=rolepermissionmanager-config`     | `config/rolepermissionmanager.php`          |
+| **Migrations** (Required)     | `php artisan vendor:publish --tag=rolepermissionmanager-migrations` | `database/migrations/`                      |
+| **Language Files** (Optional) | `php artisan vendor:publish --tag=rolepermissionmanager-lang`       | `lang/vendor/acl/`                          |
+| **Blade Views** (Optional)    | `php artisan vendor:publish --tag=rolepermissionmanager-views`      | `resources/views/vendor/acl/`               |
+| **Routes** (Optional)         | `php artisan vendor:publish --tag=rolepermissionmanager-routes`     | `routes/acl-web.php` & `routes/acl-api.php` |
 
 ```bash
 # 1. Config file (custom table names, cache TTL, super admin, locale, etc.)
@@ -106,6 +105,7 @@ php artisan migrate
 ```
 
 This creates 8 tables (customizable in config):
+
 - `acl_roles`
 - `acl_permissions`
 - `acl_secured_resources`
@@ -119,7 +119,9 @@ This creates 8 tables (customizable in config):
 
 ## 🚀 Quick Start
 
-### 1. Add the Trait to your User Model
+### 1. (Optional) Add the Trait to your User Model
+
+Adding `HasAcl` to your `User` model is **optional** — it provides direct convenience helper methods on the user instance (e.g., `$user->assignRole()`, `$user->hasPermission()`, `$user->canAccessRoute()`):
 
 ```php
 namespace App\Models;
@@ -133,6 +135,8 @@ class User extends Authenticatable
 }
 ```
 
+> **Note:** The dynamic middleware `DynamicAclGuard`, the Admin Panel, and `AclRegistry` work seamlessly even without modifying your User model.
+
 ### 2. Synchronize Application Routes
 
 ```bash
@@ -140,6 +144,7 @@ php artisan acl:sync --notify
 ```
 
 Output:
+
 ```
 🔍 Scanning routes...
 
@@ -305,7 +310,7 @@ The package hooks into Laravel's `Gate::before`, allowing standard `@can` and `$
 @endcan
 ```
 
-```php
+````php
 if ($request->user()->can('invoices.export')) {
     // Authorized
 }
@@ -338,7 +343,7 @@ $menu = [
 $filteredMenu = auth()->user()->filterNavigation($menu);
 // Or via static helper:
 $filteredMenu = \SalvatoreCervone\RolePermissionManager\Services\AclRegistry::filterMenu($menu);
-```
+````
 
 ---
 
@@ -476,24 +481,9 @@ php vendor/bin/testbench serve --port=8080
 ```
 
 Open [http://127.0.0.1:8080](http://127.0.0.1:8080) and log in with:
+
 - **Email**: `admin@demo.test`
 - **Password**: `password`
-
----
-
-## 🏷️ Versioning & Git Tags
-
-This package follows [Semantic Versioning (SemVer)](https://semver.org/).
-
-To create and publish a new release:
-
-```bash
-# 1. Tag the release
-git tag -a v1.0.0 -m "Release v1.0.0: Initial release of RolePermissionManager"
-
-# 2. Push commits and tags to GitHub
-git push origin main --tags
-```
 
 ---
 
