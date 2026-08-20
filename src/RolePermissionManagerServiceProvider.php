@@ -200,6 +200,11 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
             $user = auth()->user();
             return $user && method_exists($user, 'canAccessRoute') && $user->canAccessRoute($routeNameOrSignature);
         });
+
+        // @canResource('CorsoController@dettagliocorsi') ... @endcanResource
+        Blade::if('canResource', function (string $identifier) {
+            return AclRegistry::hasAccess($identifier);
+        });
     }
 
     /**

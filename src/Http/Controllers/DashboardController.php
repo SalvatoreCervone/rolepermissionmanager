@@ -32,14 +32,16 @@ class DashboardController extends Controller
         }
 
         $stats = [
-            'total_users'       => $totalUsers,
-            'total_roles'       => Role::count(),
-            'total_permissions' => Permission::count(),
-            'total_resources'   => SecuredResource::where('is_deprecated', false)->count(),
-            'public_resources'  => SecuredResource::where('is_public', true)->where('is_deprecated', false)->count(),
-            'protected_resources' => SecuredResource::where('is_public', false)->where('is_deprecated', false)->count(),
-            'deprecated_resources' => SecuredResource::where('is_deprecated', true)->count(),
-            'unlinked_resources' => SecuredResource::where('is_deprecated', false)
+            'total_users'            => $totalUsers,
+            'total_roles'            => Role::count(),
+            'total_permissions'      => Permission::count(),
+            'total_routes'           => SecuredResource::routes()->where('is_deprecated', false)->count(),
+            'total_custom_resources' => SecuredResource::custom()->count(),
+            'total_resources'        => SecuredResource::where('is_deprecated', false)->count(),
+            'public_resources'       => SecuredResource::where('is_public', true)->where('is_deprecated', false)->count(),
+            'protected_resources'    => SecuredResource::where('is_public', false)->where('is_deprecated', false)->count(),
+            'deprecated_resources'   => SecuredResource::where('is_deprecated', true)->count(),
+            'unlinked_resources'     => SecuredResource::where('is_deprecated', false)
                 ->where('is_public', false)
                 ->whereDoesntHave('permissions')
                 ->count(),

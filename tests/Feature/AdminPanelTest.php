@@ -90,10 +90,11 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseHas('acl_permissions', ['slug' => 'logs.audit', 'module' => 'Security']);
     }
 
-    public function test_resources_index_renders(): void
+    public function test_routes_index_renders(): void
     {
         SecuredResource::create([
             'identifier'        => 'orders.export',
+            'type'              => SecuredResource::TYPE_ROUTE,
             'controller_action' => 'OrderController@export',
             'method'            => 'POST',
             'uri'               => 'api/orders/export',
@@ -101,17 +102,18 @@ class AdminPanelTest extends TestCase
             'operator'          => 'OR',
         ]);
 
-        $response = $this->get('/acl-admin/resources');
+        $response = $this->get('/acl-admin/routes');
 
         $response->assertStatus(200);
         $response->assertSee('orders.export');
         $response->assertSee('POST');
     }
 
-    public function test_can_update_resource_configuration(): void
+    public function test_can_update_route_configuration(): void
     {
         $resource = SecuredResource::create([
             'identifier'        => 'orders.export',
+            'type'              => SecuredResource::TYPE_ROUTE,
             'controller_action' => 'OrderController@export',
             'method'            => 'POST',
             'uri'               => 'api/orders/export',
@@ -121,10 +123,78 @@ class AdminPanelTest extends TestCase
 
         $perm = Permission::create(['name' => 'Export Orders', 'slug' => 'orders.export']);
 
-        $response = $this->put("/acl-admin/resources/{$resource->id}", [
+        $response = $this->put("/acl-admin/routes/{$resource->id}", [
             'is_public'   => '1',
             'operator'    => 'AND',
             'permissions' => [$perm->id],
+        ]);
+
+        $response->assertRedirect("/acl-admin/routes/{$resource->id}/edit");
+        $resource->refresh();
+
+        $this->assertTrue($resource->is_public);
+        $this->assertEquals('AND', $resource->operator);
+        $this->assertTrue($resource->permissions->contains('id', $perm->id));
+    }
+
+    public function test_resources_index_renders_custom_resources(): void
+    {
+        SecuredResource::create([
+            'identifier'        => 'CorsoController@dettagliocorsi',
+            'type'              => SecuredResource::TYPE_CUSTOM,
+            'description'       => 'Dettagli corsi interni',
+            'controller_action' => 'App\Http\Controllers\CorsoController@dettagliocorsi',
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+
+        $response = $this->get('/acl-admin/resources');
+
+        $response->assertStatus(200);
+        $response->assertSee('CorsoController@dettagliocorsi');
+        $response->assertSee('Dettagli corsi interni');
+    }
+
+    public function test_can_create_custom_resource(): void
+    {
+        $perm = Permission::create(['name' => 'View Details', 'slug' => 'corsi.dettaglio']);
+
+        $response = $this->post('/acl-admin/resources', [
+            'identifier'        => 'CorsoController@dettagliocorsi',
+            'description'       => 'Visualizzazione dettagli',
+            'controller_action' => 'CorsoController@dettagliocorsi',
+            'is_public'         => '0',
+            'operator'          => 'OR',
+            'permissions'       => [$perm->id],
+        ]);
+
+        $response->assertRedirect('/acl-admin/resources');
+        $this->assertDatabaseHas('acl_secured_resources', [
+            'identifier' => 'CorsoController@dettagliocorsi',
+            'type'       => 'custom',
+        ]);
+    }
+
+    public function test_can_update_custom_resource(): void
+    {
+        $resource = SecuredResource::create([
+            'identifier'        => 'CorsoController@dettagliocorsi',
+            'type'              => SecuredResource::TYPE_CUSTOM,
+            'description'       => 'Original description',
+            'controller_action' => 'CorsoController@dettagliocorsi',
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+
+        $perm = Permission::create(['name' => 'View Details', 'slug' => 'corsi.dettaglio']);
+
+        $response = $this->put("/acl-admin/resources/{$resource->id}", [
+            'identifier'        => 'CorsoController@dettagliocorsi',
+            'description'       => 'Updated description',
+            'controller_action' => 'CorsoController@dettagliocorsi',
+            'is_public'         => '1',
+            'operator'          => 'AND',
+            'permissions'       => [$perm->id],
         ]);
 
         $response->assertRedirect("/acl-admin/resources/{$resource->id}/edit");
@@ -132,7 +202,24 @@ class AdminPanelTest extends TestCase
 
         $this->assertTrue($resource->is_public);
         $this->assertEquals('AND', $resource->operator);
-        $this->assertTrue($resource->permissions->contains('id', $perm->id));
+        $this->assertEquals('Updated description', $resource->description);
+    }
+
+    public function test_can_delete_custom_resource(): void
+    {
+        $resource = SecuredResource::create([
+            'identifier'        => 'CorsoController@dettagliocorsi',
+            'type'              => SecuredResource::TYPE_CUSTOM,
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+
+        $response = $this->delete("/acl-admin/resources/{$resource->id}");
+
+        $response->assertRedirect('/acl-admin/resources');
+        $this->assertDatabaseMissing('acl_secured_resources', [
+            'id' => $resource->id,
+        ]);
     }
 
     public function test_users_index_renders(): void
@@ -194,9 +281,9 @@ class AdminPanelTest extends TestCase
 
     public function test_admin_panel_sync_routes_button_executes_successfully(): void
     {
-        $response = $this->post('/acl-admin/resources/sync');
+        $response = $this->post('/acl-admin/routes/sync');
 
-        $response->assertRedirect('/acl-admin');
+        $response->assertRedirect('/acl-admin/routes');
         $response->assertSessionHas('success');
         $response->assertSessionHas('sync_output');
     }

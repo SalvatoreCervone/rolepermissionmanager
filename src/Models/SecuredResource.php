@@ -44,9 +44,12 @@ class SecuredResource extends Model
         );
     }
 
+    public const TYPE_ROUTE = 'route';
+    public const TYPE_CUSTOM = 'custom';
+
     /*
     |--------------------------------------------------------------------------
-    | Finders
+    | Finders & Scopes
     |--------------------------------------------------------------------------
     */
 
@@ -67,6 +70,24 @@ class SecuredResource extends Model
     }
 
     /**
+     * Scope to only HTTP routes.
+     */
+    public function scopeRoutes($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('type', self::TYPE_ROUTE)->orWhereNull('type');
+        });
+    }
+
+    /**
+     * Scope to only custom resources (methods, services, UI elements).
+     */
+    public function scopeCustom($query)
+    {
+        return $query->where('type', self::TYPE_CUSTOM);
+    }
+
+    /**
      * Find public secured resources.
      */
     public function scopePublic($query)
@@ -80,6 +101,22 @@ class SecuredResource extends Model
     public function scopeProtected($query)
     {
         return $query->where('is_public', false);
+    }
+
+    /**
+     * Check if this resource is an HTTP route.
+     */
+    public function isRoute(): bool
+    {
+        return ($this->type ?? self::TYPE_ROUTE) === self::TYPE_ROUTE;
+    }
+
+    /**
+     * Check if this resource is a custom resource.
+     */
+    public function isCustom(): bool
+    {
+        return $this->type === self::TYPE_CUSTOM;
     }
 
     /*

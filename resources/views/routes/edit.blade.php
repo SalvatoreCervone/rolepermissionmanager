@@ -1,66 +1,62 @@
 @extends('acl::layouts.app')
-@section('title', __('acl::resources.edit_title') . ': ' . $resource->identifier . ' — ' . config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))
+@section('title', __('acl::routes.configure_title') . ': ' . $resource->identifier . ' — ' . config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))
 @section('content')
 <div class="page-header">
     <div>
-        <h2>{{ __('acl::resources.edit_title') }}</h2>
-        <div class="breadcrumb"><a href="{{ route('acl.resources.index') }}" style="color: var(--accent); text-decoration: none;">{{ __('acl::resources.title') }}</a> / {{ $resource->identifier }}</div>
+        <h2>{{ __('acl::routes.configure_title') }}</h2>
+        <div class="breadcrumb"><a href="{{ route('acl.routes.index') }}" style="color: var(--accent); text-decoration: none;">{{ __('acl::routes.title') }}</a> / {{ $resource->identifier }}</div>
     </div>
-    <form action="{{ route('acl.resources.destroy', $resource->id) }}" method="POST" data-confirm="{{ __('acl::common.confirm_delete') }}" style="display: inline;">
-        @csrf @method('DELETE')
-        <button type="submit" class="btn btn-danger">🗑️ {{ __('acl::common.delete') }}</button>
-    </form>
 </div>
 
-<form action="{{ route('acl.resources.update', $resource->id) }}" method="POST">
+<form action="{{ route('acl.routes.update', $resource->id) }}" method="POST">
     @csrf @method('PUT')
 
-    {{-- Resource Details --}}
+    {{-- Route Info (read-only) --}}
     <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header"><h3>📦 {{ __('acl::resources.resource_details') }}</h3></div>
-
-        <div class="form-group">
-            <label for="identifier">{{ __('acl::resources.identifier') }} *</label>
-            <input type="text" id="identifier" name="identifier" class="form-control" value="{{ old('identifier', $resource->identifier) }}" required>
-            <small style="color: var(--text-muted); display: block; margin-top: 4px;">{{ __('acl::resources.identifier_help') }}</small>
-        </div>
-
-        <div class="form-group">
-            <label for="description">{{ __('acl::resources.description') }}</label>
-            <input type="text" id="description" name="description" class="form-control" value="{{ old('description', $resource->description) }}"
-                placeholder="es. Visualizzazione dettagli corsi interni">
-        </div>
-
-        <div class="form-group">
-            <label for="controller_action">{{ __('acl::resources.controller_action') }} ({{ __('acl::common.optional') }})</label>
-            <input type="text" id="controller_action" name="controller_action" class="form-control" value="{{ old('controller_action', $resource->controller_action) }}"
-                placeholder="es. App\Http\Controllers\CorsoController@dettagliocorsi">
+        <div class="card-header"><h3>🛤️ {{ __('acl::routes.route_info') }}</h3></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::routes.identifier') }}</label>
+                <div style="margin-top: 4px;"><code>{{ $resource->identifier }}</code></div>
+            </div>
+            <div>
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::routes.method') }}</label>
+                <div style="margin-top: 4px;"><span class="badge badge-{{ strtolower($resource->method ?? 'get') }}">{{ $resource->method }}</span></div>
+            </div>
+            <div>
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::routes.uri') }}</label>
+                <div style="margin-top: 4px;"><code>{{ $resource->uri }}</code></div>
+            </div>
+            <div>
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::routes.controller_action') }}</label>
+                <div style="margin-top: 4px;"><code style="font-size: 12px;">{{ $resource->controller_action }}</code></div>
+            </div>
         </div>
     </div>
 
     {{-- Access Settings --}}
     <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header"><h3>⚙️ {{ __('acl::resources.access_settings') }}</h3></div>
+        <div class="card-header"><h3>⚙️ {{ __('acl::routes.access_settings') }}</h3></div>
 
         <div class="form-group">
-            <label>{{ __('acl::resources.public_access') }}</label>
+            <label>{{ __('acl::routes.public_access') }}</label>
             <div class="toggle-container">
                 <input type="hidden" name="is_public" value="{{ old('is_public', $resource->is_public) ? '1' : '0' }}">
                 <div class="toggle {{ old('is_public', $resource->is_public) ? 'active' : '' }}"></div>
                 <span class="toggle-label">
-                    {{ $resource->is_public ? __('acl::resources.public_help') : __('acl::resources.protected_help') }}
+                    {{ $resource->is_public ? __('acl::routes.public_help') : __('acl::routes.protected_help') }}
                 </span>
             </div>
         </div>
 
         <div class="form-group">
-            <label for="operator">{{ __('acl::resources.operator_label') }}</label>
+            <label for="operator">{{ __('acl::routes.operator_label') }}</label>
             <select id="operator" name="operator" class="form-control" style="max-width: 350px;">
                 <option value="OR" {{ old('operator', $resource->operator) === 'OR' ? 'selected' : '' }}>
-                    {{ __('acl::resources.operator_or') }}
+                    {{ __('acl::routes.operator_or') }}
                 </option>
                 <option value="AND" {{ old('operator', $resource->operator) === 'AND' ? 'selected' : '' }}>
-                    {{ __('acl::resources.operator_and') }}
+                    {{ __('acl::routes.operator_and') }}
                 </option>
             </select>
         </div>
@@ -69,7 +65,7 @@
     {{-- Permission Assignment --}}
     <div class="card" style="margin-bottom: 24px;">
         <div class="card-header">
-            <h3>🔑 {{ __('acl::resources.required_permissions') }}</h3>
+            <h3>🔑 {{ __('acl::routes.required_permissions') }}</h3>
             <span style="font-size: 13px; color: var(--text-muted);">{{ $resource->permissions->count() }} {{ __('acl::common.selected') }}</span>
         </div>
 
@@ -100,7 +96,7 @@
 
     <div style="display: flex; gap: 12px;">
         <button type="submit" class="btn btn-primary">{{ __('acl::common.save_config') }}</button>
-        <a href="{{ route('acl.resources.index') }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
+        <a href="{{ route('acl.routes.index') }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
     </div>
 </form>
 @endsection

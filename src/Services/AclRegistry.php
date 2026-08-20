@@ -73,6 +73,82 @@ class AclRegistry
     }
 
     /**
+     * Determine if a user has access to a specific resource (route or custom identifier).
+     *
+     * @param  string  $identifier  The resource identifier (e.g. 'routes.users.index', 'CorsoController@dettagliocorsi', 'export.excel')
+     * @param  mixed   $user        The authenticatable user (defaults to auth()->user())
+     */
+    public static function hasAccess(string $identifier, mixed $user = null): bool
+    {
+        $rule = static::getResourceRule($identifier);
+
+        // If not registered in ACL system
+        if (!$rule) {
+            $behavior = config('rolepermissionmanager.middleware.unprotected_behavior', 'allow');
+            return $behavior === 'allow';
+        }
+
+        // Public resources are accessible by anyone
+        if ($rule->is_public) {
+            return true;
+        }
+
+        $guard = config('rolepermissionmanager.middleware.guard');
+        $user = $user ?? auth($guard)->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        // Super Admin bypass
+        $superAdminSlug = config('rolepermissionmanager.super_admin_role');
+        if ($superAdminSlug && method_exists($user, 'hasRole') && $user->hasRole($superAdminSlug)) {
+            return true;
+        }
+
+        $requiredPermissions = $rule->permission_slugs ?? [];
+        if (empty($requiredPermissions)) {
+            $unassignedBehavior = config('rolepermissionmanager.middleware.unassigned_permissions_behavior', 'allow');
+            return $unassignedBehavior === 'allow';
+        }
+
+        $userPermissions = static::getUserPermissions($user);
+        $operator = $rule->operator ?? 'OR';
+
+        if ($operator === 'AND') {
+            return empty(array_diff($requiredPermissions, $userPermissions));
+        }
+
+        return !empty(array_intersect($requiredPermissions, $userPermissions));
+    }
+
+    /**
+     * Authorize access to a resource for the user. Throws UnauthorizedException if denied.
+     *
+     * @param  string  $identifier  The resource identifier
+     * @param  mixed   $user        The authenticatable user
+     * @throws \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException
+     */
+    public static function authorize(string $identifier, mixed $user = null): void
+    {
+        $guard = config('rolepermissionmanager.middleware.guard');
+        $user = $user ?? auth($guard)->user();
+
+        if (!static::hasAccess($identifier, $user)) {
+            if (!$user) {
+                throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::notLoggedIn();
+            }
+
+            $rule = static::getResourceRule($identifier);
+            if ($rule && !empty($rule->permission_slugs)) {
+                throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forPermissions($rule->permission_slugs);
+            }
+
+            throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forResource($identifier);
+        }
+    }
+
+    /**
      * Get or build the full resources map from cache.
      *
      * Structure: [identifier => [is_public, operator, permission_slugs]]

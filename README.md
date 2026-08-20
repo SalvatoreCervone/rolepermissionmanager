@@ -271,6 +271,27 @@ if ($user->canAccessRoute('invoices.destroy')) {
 @canRoute('invoices.destroy')
     <button class="btn-danger">Delete Invoice</button>
 @endcanRoute
+
+{{-- Check Custom Resource Access (classes, methods, UI elements) --}}
+@canResource('CorsoController@dettagliocorsi')
+    <button class="btn-primary">View Course Details</button>
+@endcanResource
+```
+
+### Programmatic Resource Authorization
+
+You can check access or enforce authorization for any route or custom resource directly in PHP code:
+
+```php
+use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+
+// Check if user has access (returns boolean)
+if (AclRegistry::hasAccess('CorsoController@dettagliocorsi')) {
+    // Authorized
+}
+
+// Enforce authorization (throws UnauthorizedException / 403 if denied)
+AclRegistry::authorize('CorsoController@dettagliocorsi');
 ```
 
 ### Native Laravel Gate Integration

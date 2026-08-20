@@ -272,6 +272,7 @@ class RouteScanner
         $existing = $resourceModel::where('identifier', $identifier)->first();
 
         $attributes = [
+            'type'              => SecuredResource::TYPE_ROUTE,
             'controller_action' => $this->resolveControllerAction($route),
             'method'            => $primaryMethod,
             'uri'               => $route->uri(),
@@ -334,7 +335,8 @@ class RouteScanner
             SecuredResource::class
         );
 
-        $orphaned = $resourceModel::whereNotIn('identifier', $scannedIdentifiers)
+        $orphaned = $resourceModel::routes()
+            ->whereNotIn('identifier', $scannedIdentifiers)
             ->where('is_deprecated', false)
             ->get();
 

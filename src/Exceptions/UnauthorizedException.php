@@ -6,17 +6,19 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class UnauthorizedException extends HttpException
 {
+    protected array $requiredRoles = [];
+    protected array $requiredPermissions = [];
+    protected ?string $resourceIdentifier = null;
+
     /**
      * Create a new UnauthorizedException for missing roles.
      */
     public static function forRoles(array $roles): self
     {
-        $message = sprintf(
-            'User does not have the required role(s): [%s].',
-            implode(', ', $roles)
-        );
+        $exception = new self(403, 'User is not authorized.');
+        $exception->requiredRoles = $roles;
 
-        return new self(403, $message);
+        return $exception;
     }
 
     /**
@@ -24,12 +26,10 @@ class UnauthorizedException extends HttpException
      */
     public static function forPermissions(array $permissions): self
     {
-        $message = sprintf(
-            'User does not have the required permission(s): [%s].',
-            implode(', ', $permissions)
-        );
+        $exception = new self(403, 'User is not authorized.');
+        $exception->requiredPermissions = $permissions;
 
-        return new self(403, $message);
+        return $exception;
     }
 
     /**
@@ -37,12 +37,10 @@ class UnauthorizedException extends HttpException
      */
     public static function forResource(string $identifier): self
     {
-        $message = sprintf(
-            'User does not have access to the resource: [%s].',
-            $identifier
-        );
+        $exception = new self(403, 'User is not authorized.');
+        $exception->resourceIdentifier = $identifier;
 
-        return new self(403, $message);
+        return $exception;
     }
 
     /**
@@ -51,5 +49,29 @@ class UnauthorizedException extends HttpException
     public static function notLoggedIn(): self
     {
         return new self(401, 'User is not authenticated.');
+    }
+
+    /**
+     * Get the required roles that caused the exception.
+     */
+    public function getRequiredRoles(): array
+    {
+        return $this->requiredRoles;
+    }
+
+    /**
+     * Get the required permissions that caused the exception.
+     */
+    public function getRequiredPermissions(): array
+    {
+        return $this->requiredPermissions;
+    }
+
+    /**
+     * Get the resource identifier that caused the exception.
+     */
+    public function getResourceIdentifier(): ?string
+    {
+        return $this->resourceIdentifier;
     }
 }

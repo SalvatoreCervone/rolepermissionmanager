@@ -524,15 +524,18 @@
             <a href="{{ route('acl.permissions.index') }}" class="{{ request()->routeIs('acl.permissions.*') ? 'active' : '' }}">
                 <span class="icon">🔑</span> {{ __('acl::nav.permissions') }}
             </a>
+            <a href="{{ route('acl.routes.index') }}" class="{{ request()->routeIs('acl.routes.*') ? 'active' : '' }}">
+                <span class="icon">🛤️</span> {{ __('acl::nav.routes') }}
+            </a>
             <a href="{{ route('acl.resources.index') }}" class="{{ request()->routeIs('acl.resources.*') ? 'active' : '' }}">
-                <span class="icon">🛤️</span> {{ __('acl::nav.resources') }}
+                <span class="icon">📦</span> {{ __('acl::nav.resources') }}
             </a>
             <a href="{{ route('acl.scanner_rules.index') }}" class="{{ request()->routeIs('acl.scanner_rules.*') ? 'active' : '' }}">
                 <span class="icon">⚙️</span> {{ __('acl::nav.scanner_rules') }}
             </a>
 
             <div class="nav-section">{{ __('acl::nav.actions') }}</div>
-            <form action="{{ route('acl.resources.sync') }}" method="POST" style="padding: 0 0;">
+            <form action="{{ route('acl.routes.sync') }}" method="POST" style="padding: 0 0;">
                 @csrf
                 <button type="submit" class="btn btn-success btn-sm" style="width: calc(100% - 24px); margin: 0 12px;">
                     🔄 {{ __('acl::nav.sync_routes') }}

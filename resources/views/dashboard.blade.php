@@ -27,6 +27,16 @@
         <div class="stat-label">{{ __('acl::dashboard.stat_permissions') }}</div>
     </div>
     <div class="stat-card">
+        <div class="stat-icon">🛤️</div>
+        <div class="stat-value">{{ $stats['total_routes'] }}</div>
+        <div class="stat-label">{{ __('acl::dashboard.stat_routes') }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-value">{{ $stats['total_custom_resources'] }}</div>
+        <div class="stat-label">{{ __('acl::dashboard.stat_custom_resources') }}</div>
+    </div>
+    <div class="stat-card">
         <div class="stat-icon">🛡️</div>
         <div class="stat-value">{{ $stats['protected_resources'] }}</div>
         <div class="stat-label">{{ __('acl::dashboard.stat_protected') }}</div>
@@ -41,17 +51,12 @@
         <div class="stat-value">{{ $stats['unlinked_resources'] }}</div>
         <div class="stat-label">{{ __('acl::dashboard.stat_unlinked') }}</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon">📦</div>
-        <div class="stat-value">{{ $stats['deprecated_resources'] }}</div>
-        <div class="stat-label">{{ __('acl::dashboard.stat_deprecated') }}</div>
-    </div>
 </div>
 
 <div class="card">
     <div class="card-header">
         <h3>🕐 {{ __('acl::dashboard.recent_resources') }}</h3>
-        <a href="{{ route('acl.resources.index') }}" class="btn btn-secondary btn-sm">{{ __('acl::dashboard.view_all') }}</a>
+        <a href="{{ route('acl.routes.index') }}" class="btn btn-secondary btn-sm">{{ __('acl::dashboard.view_all') }}</a>
     </div>
     @if($recentResources->isEmpty())
         <div class="empty-state">
@@ -63,9 +68,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Method</th>
+                        <th>Type</th>
                         <th>Identifier</th>
-                        <th>URI</th>
+                        <th>URI / Action</th>
                         <th>Status</th>
                         <th>Permissions</th>
                         <th>Updated</th>
@@ -74,11 +79,19 @@
                 <tbody>
                     @foreach($recentResources as $resource)
                     <tr>
-                        <td><span class="badge badge-{{ strtolower($resource->method) }}">{{ $resource->method }}</span></td>
-                        <td><code>{{ $resource->identifier }}</code></td>
-                        <td><code>{{ $resource->uri }}</code></td>
                         <td>
-                            @if($resource->is_public)
+                            @if($resource->isRoute())
+                                <span class="badge badge-{{ strtolower($resource->method ?? 'get') }}">{{ $resource->method ?? 'ROUTE' }}</span>
+                            @else
+                                <span class="badge" style="background: var(--accent-subtle); color: var(--accent);">CUSTOM</span>
+                            @endif
+                        </td>
+                        <td><code>{{ $resource->identifier }}</code></td>
+                        <td><code>{{ $resource->uri ?: ($resource->controller_action ?: '—') }}</code></td>
+                        <td>
+                            @if($resource->is_deprecated)
+                                <span class="badge badge-deprecated">Deprecated</span>
+                            @elseif($resource->is_public)
                                 <span class="badge badge-public">Public</span>
                             @else
                                 <span class="badge badge-protected">Protected</span>
