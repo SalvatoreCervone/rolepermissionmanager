@@ -35,14 +35,15 @@ Routes and functions are registered as **Secured Resources** in the database. Pe
 
 - 🚀 **Zero Hardcoding** — Define clean routes without cluttering them with `permission:...` middleware
 - 🔍 **Route Auto-Discovery** — `php artisan acl:sync` scans your routes and registers new endpoints automatically
+- 📦 **Custom Resources Support** — Create, manage, and protect arbitrary classes, methods, services, or UI actions from the panel
 - ⏰ **Automated Scheduler** — Configurable daily route synchronization to catch new endpoints
 - 🛡️ **Single Dynamic Interceptor** — `DynamicAclGuard` middleware evaluates requests against cached ACL rules
 - ⚡ **High Performance & Low Latency** — Complete cache layer (Redis/File/Memory) with automatic invalidation on Eloquent events
-- 🎛️ **AND / OR Permission Operators** — Choose whether a route requires *all* or *at least one* of the linked permissions
+- 🎛️ **AND / OR Permission Operators** — Choose whether a resource requires *all* or *at least one* of the linked permissions
 - 👑 **Super Admin Bypass** — Configurable super admin role that bypasses all permission checks automatically
 - 👤 **User Access Management** — Manage user roles and direct permissions with live autocomplete search
-- 🖥️ **Built-in Web Admin Panel** — Modern, dark-themed dashboard for managing Roles, Permissions, Routes, and Users (no external JS dependencies)
-- 🎨 **Blade Directives** — `@role`, `@haspermission`, and `@canRoute` for views
+- 🖥️ **Built-in Web Admin Panel** — Modern, dark-themed dashboard for managing Roles, Permissions, HTTP Routes, Custom Resources, and Users
+- 🎨 **Blade Directives** — `@role`, `@haspermission`, `@canRoute`, and `@canResource` for views
 - 🔌 **Native Laravel Gate Integration** — Works seamlessly with `$user->can()` and `@can`
 - 📦 **Polymorphic Architecture** — Works with any Authenticatable model (User, Admin, Member, etc.)
 
