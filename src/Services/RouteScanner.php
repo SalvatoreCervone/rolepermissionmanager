@@ -114,29 +114,44 @@ class RouteScanner
         $uri = $route->uri();
         $name = $route->getName();
 
-        // Exclude by URI prefix or wildcard pattern
-        foreach ($this->excludedPrefixes as $prefix) {
+        $dynamicRules = AclRegistry::getScannerRules();
+
+        // 1. Dynamic Inclusions (Take precedence over config exclusions)
+        if ($name) {
+            foreach ($dynamicRules['includes']['names'] as $pattern) {
+                if (Str::is($pattern, $name)) {
+                    return false;
+                }
+            }
+        }
+        foreach ($dynamicRules['includes']['prefixes'] as $prefix) {
+            if (Str::is($prefix, $uri) || Str::is($prefix . '/*', $uri) || Str::startsWith($uri, $prefix)) {
+                return false;
+            }
+        }
+
+        // 2. Dynamic DB Exclusions + Config Exclusions by URI prefix
+        $allPrefixes = array_merge($this->excludedPrefixes, $dynamicRules['excludes']['prefixes']);
+        foreach ($allPrefixes as $prefix) {
             if (Str::is($prefix, $uri) || Str::is($prefix . '/*', $uri) || Str::startsWith($uri, $prefix)) {
                 return true;
             }
         }
 
-        // Exclude by route name or wildcard pattern (e.g., "password.*", "workbench.*")
+        // 3. Dynamic DB Exclusions + Config Exclusions by Route name
+        $allNames = array_merge($this->excludedNames, $dynamicRules['excludes']['names']);
         if ($name) {
-            foreach ($this->excludedNames as $pattern) {
+            foreach ($allNames as $pattern) {
                 if (Str::is($pattern, $name)) {
                     return true;
                 }
             }
         }
 
-        // Exclude routes without a controller action (e.g., fallback/redirect routes).
+        // 4. Exclude routes without a controller action (e.g., fallback/redirect routes).
         $action = $route->getActionName();
-        if ($action === 'Closure') {
-            // Allow closures only if they have a name.
-            if (!$name) {
-                return true;
-            }
+        if ($action === 'Closure' && !$name) {
+            return true;
         }
 
         return false;

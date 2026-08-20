@@ -529,6 +529,9 @@
             <a href="{{ route('acl.resources.index') }}" class="{{ request()->routeIs('acl.resources.*') ? 'active' : '' }}">
                 <span class="icon">🛤️</span> {{ __('acl::nav.resources') }}
             </a>
+            <a href="{{ route('acl.scanner_rules.index') }}" class="{{ request()->routeIs('acl.scanner_rules.*') ? 'active' : '' }}">
+                <span class="icon">⚙️</span> {{ __('acl::nav.scanner_rules') }}
+            </a>
 
             <div class="nav-section">{{ __('acl::nav.actions') }}</div>
             <form action="{{ route('acl.resources.sync') }}" method="POST" style="padding: 0 0;">

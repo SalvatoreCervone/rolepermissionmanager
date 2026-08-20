@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController;
 use SalvatoreCervone\RolePermissionManager\Models\Permission;
 use SalvatoreCervone\RolePermissionManager\Models\Role;
+use SalvatoreCervone\RolePermissionManager\Models\ScannerRule;
 use SalvatoreCervone\RolePermissionManager\Models\SecuredResource;
 
 $apiPrefix = config('rolepermissionmanager.api.prefix', 'acl-api');
@@ -33,6 +34,11 @@ Route::prefix($apiPrefix)
         Route::get('/resources', function () {
             return response()->json(SecuredResource::with('permissions')->get());
         })->name('resources');
+
+        // Scanner Rules JSON API
+        Route::get('/scanner-rules', function () {
+            return response()->json(ScannerRule::all());
+        })->name('scanner_rules');
 
         // Programmatic Route Sync API Trigger
         Route::post('/sync', function (Request $request) {

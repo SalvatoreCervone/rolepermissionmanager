@@ -7,7 +7,8 @@ return [
     'users'        => 'Users & Access',
     'roles'        => 'Roles',
     'permissions'  => 'Permissions',
-    'resources'    => 'Routes / Resources',
-    'actions'      => 'Actions',
-    'sync_routes'  => 'Sync Routes',
+    'resources'     => 'Routes / Resources',
+    'scanner_rules' => 'Scanner Rules',
+    'actions'       => 'Actions',
+    'sync_routes'   => 'Sync Routes',
 ];

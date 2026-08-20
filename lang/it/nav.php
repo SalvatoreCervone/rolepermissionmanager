@@ -7,7 +7,8 @@ return [
     'users'        => 'Utenti & Accessi',
     'roles'        => 'Ruoli',
     'permissions'  => 'Permessi',
-    'resources'    => 'Rotte / Risorse',
-    'actions'      => 'Azioni',
-    'sync_routes'  => 'Sincronizza Rotte',
+    'resources'     => 'Rotte / Risorse',
+    'scanner_rules' => 'Regole Scanner',
+    'actions'       => 'Azioni',
+    'sync_routes'   => 'Sincronizza Rotte',
 ];

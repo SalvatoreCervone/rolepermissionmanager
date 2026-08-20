@@ -104,10 +104,11 @@ php artisan vendor:publish --tag=rolepermissionmanager-routes
 php artisan migrate
 ```
 
-This creates 7 tables (customizable in config):
+This creates 8 tables (customizable in config):
 - `acl_roles`
 - `acl_permissions`
 - `acl_secured_resources`
+- `acl_scanner_rules` (dynamic route exclusions & inclusions)
 - `acl_model_has_roles` (polymorphic pivot)
 - `acl_model_has_permissions` (polymorphic pivot)
 - `acl_role_has_permissions` (pivot)

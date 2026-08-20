@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use SalvatoreCervone\RolePermissionManager\Http\Controllers\DashboardController;
 use SalvatoreCervone\RolePermissionManager\Http\Controllers\PermissionController;
 use SalvatoreCervone\RolePermissionManager\Http\Controllers\RoleController;
+use SalvatoreCervone\RolePermissionManager\Http\Controllers\ScannerRuleController;
 use SalvatoreCervone\RolePermissionManager\Http\Controllers\SecuredResourceController;
 use SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController;
 
@@ -44,6 +45,12 @@ Route::prefix($prefix)
         Route::get('/resources', [SecuredResourceController::class, 'index'])->name('resources.index');
         Route::get('/resources/{id}/edit', [SecuredResourceController::class, 'edit'])->name('resources.edit');
         Route::put('/resources/{id}', [SecuredResourceController::class, 'update'])->name('resources.update');
+
+        // Scanner Rules (Exclusions & Inclusions)
+        Route::get('/scanner-rules', [ScannerRuleController::class, 'index'])->name('scanner_rules.index');
+        Route::post('/scanner-rules', [ScannerRuleController::class, 'store'])->name('scanner_rules.store');
+        Route::patch('/scanner-rules/{id}/toggle', [ScannerRuleController::class, 'toggle'])->name('scanner_rules.toggle');
+        Route::delete('/scanner-rules/{id}', [ScannerRuleController::class, 'destroy'])->name('scanner_rules.destroy');
 
         // Route Scanner Sync Trigger
         Route::post('/resources/sync', [SecuredResourceController::class, 'sync'])->name('resources.sync');

@@ -188,12 +188,62 @@ class AclRegistry
     */
 
     /**
+     * Cache key for active scanner rules.
+     */
+    protected const SCANNER_RULES_KEY = 'scanner_rules';
+
+    /**
+     * Get all active scanner rules (cached).
+     *
+     * @return array{excludes: array{prefixes: array, names: array}, includes: array{prefixes: array, names: array}}
+     */
+    public static function getScannerRules(): array
+    {
+        $key = static::cacheKey(static::SCANNER_RULES_KEY);
+
+        return static::cache()->remember($key, static::ttl(), function () {
+            $ruleModel = config('rolepermissionmanager.models.scanner_rule', \SalvatoreCervone\RolePermissionManager\Models\ScannerRule::class);
+
+            $rules = [
+                'excludes' => ['prefixes' => [], 'names' => []],
+                'includes' => ['prefixes' => [], 'names' => []],
+            ];
+
+            if (!class_exists($ruleModel)) {
+                return $rules;
+            }
+
+            try {
+                $dbRules = $ruleModel::active()->get();
+                foreach ($dbRules as $r) {
+                    $bucket = $r->type === 'include' ? 'includes' : 'excludes';
+                    $target = $r->target === 'prefix' ? 'prefixes' : 'names';
+                    $rules[$bucket][$target][] = $r->pattern;
+                }
+            } catch (\Throwable $e) {
+                // Table might not exist yet during migration
+            }
+
+            return $rules;
+        });
+    }
+
+    /**
+     * Flush the scanner rules cache.
+     */
+    public static function flushScannerRulesCache(): void
+    {
+        static::cache()->forget(static::cacheKey(static::SCANNER_RULES_KEY));
+    }
+
+    /**
      * Flush the entire ACL resources map cache.
      * Call this when roles, permissions, or resources are modified.
      */
     public static function flushResourcesCache(): void
     {
         static::cache()->forget(static::cacheKey(static::RESOURCES_MAP_KEY));
+        static::flushScannerRulesCache();
     }
 
     /**
@@ -212,6 +262,7 @@ class AclRegistry
     public static function flushAll(): void
     {
         static::flushResourcesCache();
+        static::flushScannerRulesCache();
 
         // Flush all user permission caches.
         // Since we can't iterate all user IDs efficiently without tags,
@@ -227,6 +278,8 @@ class AclRegistry
     public static function refreshCache(): void
     {
         static::flushResourcesCache();
+        static::flushScannerRulesCache();
         static::getResourcesMap(); // Rebuild immediately.
+        static::getScannerRules();
     }
 }

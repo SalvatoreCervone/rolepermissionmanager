@@ -160,20 +160,42 @@ class DynamicAclGuard
             }
         }
 
-        // 2. Check excluded route names from config (supports wildcard patterns).
-        $excludedNames = config('rolepermissionmanager.scanner.excluded_names', []);
+        $uri = $route->uri();
+        $dynamicRules = AclRegistry::getScannerRules();
+
+        // 2. Explicit Inclusions (never skip ACL if explicitly included)
         if ($routeName) {
-            foreach ($excludedNames as $pattern) {
+            foreach ($dynamicRules['includes']['names'] as $pattern) {
+                if (\Illuminate\Support\Str::is($pattern, $routeName)) {
+                    return false;
+                }
+            }
+        }
+        foreach ($dynamicRules['includes']['prefixes'] as $prefix) {
+            if (\Illuminate\Support\Str::is($prefix, $uri) || \Illuminate\Support\Str::is($prefix . '/*', $uri) || \Illuminate\Support\Str::startsWith($uri, $prefix)) {
+                return false;
+            }
+        }
+
+        // 3. Excluded Route Names (Config + DB Rules)
+        $allNames = array_merge(
+            config('rolepermissionmanager.scanner.excluded_names', []),
+            $dynamicRules['excludes']['names']
+        );
+        if ($routeName) {
+            foreach ($allNames as $pattern) {
                 if (\Illuminate\Support\Str::is($pattern, $routeName)) {
                     return true;
                 }
             }
         }
 
-        // 3. Check excluded URI prefixes from config (supports wildcard patterns).
-        $excludedPrefixes = config('rolepermissionmanager.scanner.excluded_prefixes', []);
-        $uri = $route->uri();
-        foreach ($excludedPrefixes as $prefix) {
+        // 4. Excluded URI Prefixes (Config + DB Rules)
+        $allPrefixes = array_merge(
+            config('rolepermissionmanager.scanner.excluded_prefixes', []),
+            $dynamicRules['excludes']['prefixes']
+        );
+        foreach ($allPrefixes as $prefix) {
             if (\Illuminate\Support\Str::is($prefix, $uri) || \Illuminate\Support\Str::is($prefix . '/*', $uri) || \Illuminate\Support\Str::startsWith($uri, $prefix)) {
                 return true;
             }
