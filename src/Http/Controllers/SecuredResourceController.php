@@ -39,8 +39,9 @@ class SecuredResourceController extends Controller
         }
 
         $resources = $query->paginate($perPage)->appends($request->query());
+        $allPermissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
 
-        return view('acl::resources.index', compact('resources'));
+        return view('acl::resources.index', compact('resources', 'allPermissions'));
     }
 
     /**
@@ -158,6 +159,82 @@ class SecuredResourceController extends Controller
         return redirect()
             ->route('acl.resources.index')
             ->with('success', __('acl::resources.deleted_success', ['identifier' => $identifier]));
+    }
+
+    /**
+     * Perform bulk update actions on multiple selected custom resources.
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $permissionsTable = config('rolepermissionmanager.tables.permissions', 'acl_permissions');
+        $resourcesTable = config('rolepermissionmanager.tables.secured_resources', 'acl_secured_resources');
+
+        $validated = $request->validate([
+            'ids'           => 'required|array|min:1',
+            'ids.*'         => "integer|exists:{$resourcesTable},id",
+            'action'        => 'required|string|in:set_super_admin,remove_super_admin,make_public,make_protected,add_permissions,sync_permissions,remove_all_permissions,set_operator_or,set_operator_and,delete',
+            'permissions'   => 'nullable|array',
+            'permissions.*' => "integer|exists:{$permissionsTable},id",
+        ]);
+
+        $ids = $validated['ids'];
+        $action = $validated['action'];
+        $count = count($ids);
+        $resources = SecuredResource::custom()->whereIn('id', $ids)->get();
+
+        match ($action) {
+            'set_super_admin' => SecuredResource::whereIn('id', $ids)->update([
+                'is_super_admin_only' => true,
+                'is_public'           => false,
+            ]),
+            'remove_super_admin' => SecuredResource::whereIn('id', $ids)->update([
+                'is_super_admin_only' => false,
+            ]),
+            'make_public' => SecuredResource::whereIn('id', $ids)->update([
+                'is_public'           => true,
+                'is_super_admin_only' => false,
+            ]),
+            'make_protected' => SecuredResource::whereIn('id', $ids)->update([
+                'is_public' => false,
+            ]),
+            'set_operator_or' => SecuredResource::whereIn('id', $ids)->update([
+                'operator' => 'OR',
+            ]),
+            'set_operator_and' => SecuredResource::whereIn('id', $ids)->update([
+                'operator' => 'AND',
+            ]),
+            'delete' => (function () use ($resources) {
+                foreach ($resources as $res) {
+                    $res->permissions()->detach();
+                    $res->delete();
+                }
+            })(),
+            'add_permissions' => (function () use ($resources, $validated) {
+                $perms = $validated['permissions'] ?? [];
+                if (!empty($perms)) {
+                    foreach ($resources as $res) {
+                        $res->permissions()->syncWithoutDetaching($perms);
+                    }
+                }
+            })(),
+            'sync_permissions' => (function () use ($resources, $validated) {
+                $perms = $validated['permissions'] ?? [];
+                foreach ($resources as $res) {
+                    $res->permissions()->sync($perms);
+                }
+            })(),
+            'remove_all_permissions' => (function () use ($resources) {
+                foreach ($resources as $res) {
+                    $res->permissions()->detach();
+                }
+            })(),
+        };
+
+        AclRegistry::refreshCache();
+
+        return redirect()
+            ->route('acl.resources.index')
+            ->with('success', __('acl::routes.bulk_updated_success', ['count' => $count]));
     }
 
     /**

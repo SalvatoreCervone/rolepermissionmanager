@@ -44,12 +44,14 @@ Route::prefix($prefix)
 
         // HTTP Routes Management (Scanned)
         Route::get('/routes', [RouteResourceController::class, 'index'])->name('routes.index');
+        Route::post('/routes/bulk-update', [RouteResourceController::class, 'bulkUpdate'])->name('routes.bulk_update');
         Route::get('/routes/{id}/edit', [RouteResourceController::class, 'edit'])->name('routes.edit');
         Route::put('/routes/{id}', [RouteResourceController::class, 'update'])->name('routes.update');
         Route::post('/routes/sync', [RouteResourceController::class, 'sync'])->name('routes.sync');
 
         // Custom Resources Management (Classes, Methods, UI Elements)
         Route::get('/resources', [SecuredResourceController::class, 'index'])->name('resources.index');
+        Route::post('/resources/bulk-update', [SecuredResourceController::class, 'bulkUpdate'])->name('resources.bulk_update');
         Route::get('/resources/create', [SecuredResourceController::class, 'create'])->name('resources.create');
         Route::post('/resources', [SecuredResourceController::class, 'store'])->name('resources.store');
         Route::get('/resources/{id}/edit', [SecuredResourceController::class, 'edit'])->name('resources.edit');
