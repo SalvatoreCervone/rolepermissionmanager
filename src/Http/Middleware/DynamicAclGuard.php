@@ -32,10 +32,15 @@ class DynamicAclGuard
         $routeName = $route->getName();
         $routeSignature = $request->method() . ':' . $route->uri();
 
-        // 2. Look up the resource rule in the ACL registry (cached).
+        // 2. Skip ACL if route is explicitly marked with 'guest' middleware or matches excluded patterns in config.
+        if ($this->shouldSkipAcl($route, $routeName)) {
+            return $next($request);
+        }
+
+        // 3. Look up the resource rule in the ACL registry (cached).
         $rule = AclRegistry::getResourceRule($routeName, $routeSignature);
 
-        // 3. If the route is not registered in the ACL system.
+        // 4. If the route is not registered in the ACL system.
         if (!$rule) {
             $behavior = config('rolepermissionmanager.middleware.unprotected_behavior', 'allow');
 
@@ -48,25 +53,33 @@ class DynamicAclGuard
             return $next($request);
         }
 
-        // 4. If the resource is marked as public, skip all checks.
+        // 5. If the resource is marked as public, skip all checks.
         if ($rule->is_public) {
             return $next($request);
         }
 
-        // 5. Retrieve the authenticated user.
+        // 6. Retrieve the authenticated user.
         $guard = config('rolepermissionmanager.middleware.guard');
         $user = $request->user($guard);
 
         if (!$user) {
+            if ($request->expectsJson()) {
+                throw UnauthorizedException::notLoggedIn();
+            }
+
+            if (\Illuminate\Support\Facades\Route::has('login')) {
+                return redirect()->guest(route('login'));
+            }
+
             throw UnauthorizedException::notLoggedIn();
         }
 
-        // 6. Super Admin bypass.
+        // 7. Super Admin bypass.
         if ($this->isSuperAdmin($user)) {
             return $next($request);
         }
 
-        // 7. Check permissions based on the operator (AND / OR).
+        // 8. Check permissions based on the operator (AND / OR).
         $requiredPermissions = $rule->permission_slugs ?? [];
 
         // If no permissions are configured for this resource,
@@ -127,5 +140,45 @@ class DynamicAclGuard
 
         // OR: At least one required permission must be present.
         return !empty(array_intersect($required, $user));
+    }
+
+    /**
+     * Determine if the route should bypass dynamic ACL evaluation.
+     */
+    protected function shouldSkipAcl($route, ?string $routeName): bool
+    {
+        if (!$route) {
+            return true;
+        }
+
+        // 1. If route has Laravel's 'guest' middleware (e.g. login/register pages), skip ACL.
+        if (method_exists($route, 'gatherMiddleware')) {
+            foreach ($route->gatherMiddleware() as $m) {
+                if ($m === 'guest' || \Illuminate\Support\Str::startsWith($m, 'guest:')) {
+                    return true;
+                }
+            }
+        }
+
+        // 2. Check excluded route names from config (supports wildcard patterns).
+        $excludedNames = config('rolepermissionmanager.scanner.excluded_names', []);
+        if ($routeName) {
+            foreach ($excludedNames as $pattern) {
+                if (\Illuminate\Support\Str::is($pattern, $routeName)) {
+                    return true;
+                }
+            }
+        }
+
+        // 3. Check excluded URI prefixes from config (supports wildcard patterns).
+        $excludedPrefixes = config('rolepermissionmanager.scanner.excluded_prefixes', []);
+        $uri = $route->uri();
+        foreach ($excludedPrefixes as $prefix) {
+            if (\Illuminate\Support\Str::is($prefix, $uri) || \Illuminate\Support\Str::is($prefix . '/*', $uri) || \Illuminate\Support\Str::startsWith($uri, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

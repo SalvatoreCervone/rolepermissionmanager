@@ -49,6 +49,14 @@ class RouteScanner
         if ($apiPrefix && !in_array($apiPrefix, $this->excludedPrefixes)) {
             $this->excludedPrefixes[] = $apiPrefix;
         }
+
+        // Auto exclude workbench, storage, and framework internals
+        $internalPrefixes = ['workbench', 'storage', 'sanctum', '_ignition', '_debugbar', 'telescope', 'horizon', 'livewire'];
+        foreach ($internalPrefixes as $ip) {
+            if (!in_array($ip, $this->excludedPrefixes)) {
+                $this->excludedPrefixes[] = $ip;
+            }
+        }
     }
 
     /**
@@ -104,18 +112,22 @@ class RouteScanner
     protected function shouldExclude(Route $route): bool
     {
         $uri = $route->uri();
+        $name = $route->getName();
 
-        // Exclude by URI prefix.
+        // Exclude by URI prefix or wildcard pattern
         foreach ($this->excludedPrefixes as $prefix) {
-            if (Str::startsWith($uri, $prefix)) {
+            if (Str::is($prefix, $uri) || Str::is($prefix . '/*', $uri) || Str::startsWith($uri, $prefix)) {
                 return true;
             }
         }
 
-        // Exclude by route name.
-        $name = $route->getName();
-        if ($name && in_array($name, $this->excludedNames, true)) {
-            return true;
+        // Exclude by route name or wildcard pattern (e.g., "password.*", "workbench.*")
+        if ($name) {
+            foreach ($this->excludedNames as $pattern) {
+                if (Str::is($pattern, $name)) {
+                    return true;
+                }
+            }
         }
 
         // Exclude routes without a controller action (e.g., fallback/redirect routes).
