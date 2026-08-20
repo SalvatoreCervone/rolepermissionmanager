@@ -83,7 +83,7 @@
                 </tbody>
             </table>
         </div>
-        {{ $resources->links() }}
+        {{ $resources->links('acl::pagination') }}
     @endif
 </div>
 @endsection

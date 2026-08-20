@@ -45,7 +45,7 @@
                 </tbody>
             </table>
         </div>
-        {{ $roles->links() }}
+        {{ $roles->links('acl::pagination') }}
     @endif
 </div>
 @endsection

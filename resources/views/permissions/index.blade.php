@@ -66,7 +66,7 @@
                 </tbody>
             </table>
         </div>
-        {{ $permissions->links() }}
+        {{ $permissions->links('acl::pagination') }}
     @endif
 </div>
 @endsection

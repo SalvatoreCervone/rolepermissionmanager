@@ -84,7 +84,7 @@
                         </td>
                         <td class="actions">
                             <a href="{{ route('acl.users.edit', $user->getKey()) }}" class="btn btn-secondary btn-sm">
-                                ⚙️ Manage Access
+                                ⚙️ {{ __('acl::users.manage_access') }}
                             </a>
                         </td>
                     </tr>
@@ -92,7 +92,7 @@
                 </tbody>
             </table>
         </div>
-        {{ $users->links() }}
+        {{ $users->links('acl::pagination') }}
     @endif
 </div>
 

@@ -393,32 +393,77 @@
         .filter-bar .form-control { width: auto; min-width: 160px; }
         .filter-bar input[type="text"].form-control { min-width: 260px; }
 
-        /* Pagination */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 6px;
-            margin-top: 20px;
-            list-style: none;
+        /* Pagination & SVG Containment */
+        svg {
+            max-width: 100%;
+            height: auto;
         }
-        .pagination li a, .pagination li span {
+        nav[role="navigation"] svg {
+            width: 16px !important;
+            height: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .custom-pagination-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .pagination-summary {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .pagination-summary .fw-bold {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .pagination-list {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .page-item .page-link {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 36px;
-            height: 36px;
+            min-width: 34px;
+            height: 34px;
             padding: 0 10px;
             border-radius: var(--radius-sm);
             font-size: 13px;
+            font-weight: 500;
             text-decoration: none;
             border: 1px solid var(--border);
             color: var(--text-secondary);
             background: var(--bg-card);
             transition: all var(--transition);
         }
-        .pagination li a:hover { border-color: var(--accent); color: var(--accent); }
-        .pagination li.active span { background: var(--accent); color: white; border-color: var(--accent); }
-        .pagination li.disabled span { opacity: 0.4; cursor: not-allowed; }
+        .page-item:not(.disabled):not(.active) .page-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+        .page-item.active .page-link {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .page-item.disabled .page-link {
+            opacity: 0.35;
+            cursor: not-allowed;
+            background: var(--bg-primary);
+        }
 
         /* Sync output */
         .sync-output {
