@@ -272,7 +272,8 @@ trait HasAcl
         $requiredPermissions = $rule->permission_slugs ?? [];
 
         if (empty($requiredPermissions)) {
-            return false; // No permissions configured = locked to SuperAdmin.
+            $unassignedBehavior = config('rolepermissionmanager.middleware.unassigned_permissions_behavior', 'allow');
+            return $unassignedBehavior !== 'deny';
         }
 
         $userPermissions = AclRegistry::getUserPermissions($this);

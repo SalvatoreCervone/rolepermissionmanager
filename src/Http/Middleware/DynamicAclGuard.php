@@ -82,11 +82,17 @@ class DynamicAclGuard
         // 8. Check permissions based on the operator (AND / OR).
         $requiredPermissions = $rule->permission_slugs ?? [];
 
-        // If no permissions are configured for this resource,
-        // only SuperAdmin can access (which was already checked above).
+        // If no permissions are configured for this resource:
         if (empty($requiredPermissions)) {
-            $identifier = $routeName ?? $routeSignature;
-            throw UnauthorizedException::forResource($identifier);
+            $unassignedBehavior = config('rolepermissionmanager.middleware.unassigned_permissions_behavior', 'allow');
+
+            if ($unassignedBehavior === 'deny') {
+                $identifier = $routeName ?? $routeSignature;
+                throw UnauthorizedException::forResource($identifier);
+            }
+
+            // 'allow': Any authenticated user can access.
+            return $next($request);
         }
 
         // Get the user's permission slugs (cached).

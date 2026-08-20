@@ -233,7 +233,9 @@ class MiddlewareGuardTest extends TestCase
 
     public function test_resource_with_no_permissions_blocks_non_super_admin(): void
     {
-        // Resource registered but no permissions attached = only SuperAdmin.
+        config()->set('rolepermissionmanager.middleware.unassigned_permissions_behavior', 'deny');
+
+        // Resource registered but no permissions attached = only SuperAdmin when behavior is 'deny'.
         $this->registerResource('protected.page', 'GET', 'protected-page');
 
         $user = $this->createUser();
@@ -273,4 +275,30 @@ class MiddlewareGuardTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Unnamed OK');
     }
+
+    public function test_protected_route_with_no_permissions_allows_any_authenticated_user(): void
+    {
+        // Protected route (is_public: false) with 0 permissions
+        $this->registerResource('protected.page', 'GET', 'protected-page', isPublic: false, permissionSlugs: []);
+
+        $user = $this->createUser();
+        $this->actingAs($user);
+
+        $response = $this->get('/protected-page');
+
+        $response->assertStatus(200);
+        $response->assertSee('Protected Content');
+    }
+
+    public function test_protected_route_with_no_permissions_denies_unauthenticated_guests(): void
+    {
+        // Protected route (is_public: false) with 0 permissions
+        $this->registerResource('protected.page', 'GET', 'protected-page', isPublic: false, permissionSlugs: []);
+
+        // Guest (not logged in)
+        $response = $this->get('/protected-page');
+
+        $response->assertStatus(401);
+    }
 }
+

@@ -164,6 +164,7 @@ return [
         'register_globally' => true,
         'guard' => null, // null = default guard
         'unprotected_behavior' => 'allow',
+        'unassigned_permissions_behavior' => 'allow', // 'allow' = any authenticated user can access; 'deny' = locked to SuperAdmin
     ],
 
     /*
