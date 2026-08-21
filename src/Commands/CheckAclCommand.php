@@ -51,7 +51,7 @@ class CheckAclCommand extends Command
 
         $this->newLine();
         $this->info("=== ACL Diagnostic Check ===");
-        $this->line("User:       " . ($user->name ?? $user->email) . " (ID: {$user->id})");
+        $this->line("User:       " . AclRegistry::formatUserDisplayName($user) . " (ID: {$user->id})");
         $this->line("Resource:   {$identifier}");
         $this->newLine();
 

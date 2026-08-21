@@ -519,5 +519,35 @@ class AclRegistry
 
         return $userModelClass ?: 'App\\Models\\User';
     }
+
+    /**
+     * Format a user model's display name using the configured display_field.
+     */
+    public static function formatUserDisplayName(mixed $user): string
+    {
+        if (!$user) {
+            return 'System';
+        }
+
+        $field = config('rolepermissionmanager.users.display_field', 'name');
+
+        if (is_array($field)) {
+            $parts = [];
+            foreach ($field as $f) {
+                $val = $user->{$f} ?? null;
+                if (!is_null($val) && $val !== '') {
+                    $parts[] = $val;
+                }
+            }
+            if (!empty($parts)) {
+                return implode(' ', $parts);
+            }
+        } elseif (!empty($field) && !empty($user->{$field})) {
+            return (string) $user->{$field};
+        }
+
+        $userId = method_exists($user, 'getKey') ? $user->getKey() : ($user->id ?? null);
+        return $user->name ?? $user->email ?? ($userId ? "User #{$userId}" : 'User');
+    }
 }
 

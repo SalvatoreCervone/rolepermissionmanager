@@ -16,7 +16,7 @@ class AuditLogger
             $guard = config('rolepermissionmanager.middleware.guard');
             $user = ($guard && auth()->guard($guard)->check()) ? auth()->guard($guard)->user() : Auth::user();
             $userId = $user ? $user->getAuthIdentifier() : null;
-            $userName = $user ? ($user->name ?? $user->email ?? "User #{$userId}") : 'System';
+            $userName = AclRegistry::formatUserDisplayName($user);
 
             return AuditLog::create([
                 'user_id'           => $userId,
