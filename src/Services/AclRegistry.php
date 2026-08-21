@@ -493,5 +493,31 @@ class AclRegistry
 
         return true;
     }
+
+    /**
+     * Resolve the authenticatable User model class.
+     */
+    public static function getUserModelClass(): string
+    {
+        $userModelClass = config('rolepermissionmanager.models.user');
+        if ($userModelClass && class_exists($userModelClass)) {
+            return $userModelClass;
+        }
+
+        $authModel = config('auth.providers.users.model');
+        if ($authModel && class_exists($authModel)) {
+            return $authModel;
+        }
+
+        if (class_exists('App\\Models\\User')) {
+            return 'App\\Models\\User';
+        }
+
+        if (class_exists('Workbench\\App\\Models\\User')) {
+            return 'Workbench\\App\\Models\\User';
+        }
+
+        return $userModelClass ?: 'App\\Models\\User';
+    }
 }
 

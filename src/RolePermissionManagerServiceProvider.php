@@ -130,6 +130,9 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
     {
         $this->commands([
             SyncAclRoutesCommand::class,
+            \SalvatoreCervone\RolePermissionManager\Commands\CheckAclCommand::class,
+            \SalvatoreCervone\RolePermissionManager\Commands\ExportAclCommand::class,
+            \SalvatoreCervone\RolePermissionManager\Commands\ImportAclCommand::class,
         ]);
     }
 

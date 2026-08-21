@@ -15,25 +15,29 @@ class DatabaseSeeder extends Seeder
         // ──────────────────────────────────────
         // 1. Create Demo User
         // ──────────────────────────────────────
-        $admin = User::create([
-            'name'     => 'Admin Demo',
-            'email'    => 'admin@demo.test',
-            'password' => bcrypt('password'),
-        ]);
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@demo.test'],
+            [
+                'name'     => 'Admin Demo',
+                'password' => bcrypt('password'),
+            ]
+        );
 
-        $editor = User::create([
-            'name'     => 'Editor Demo',
-            'email'    => 'editor@demo.test',
-            'password' => bcrypt('password'),
-        ]);
+        $editor = User::firstOrCreate(
+            ['email' => 'editor@demo.test'],
+            [
+                'name'     => 'Editor Demo',
+                'password' => bcrypt('password'),
+            ]
+        );
 
         // ──────────────────────────────────────
         // 2. Create Roles
         // ──────────────────────────────────────
-        $superAdmin = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin', 'description' => 'Full access to everything']);
-        $adminRole  = Role::create(['name' => 'Administrator', 'slug' => 'admin', 'description' => 'Manages users and settings']);
-        $editorRole = Role::create(['name' => 'Editor', 'slug' => 'editor', 'description' => 'Can edit and publish content']);
-        $viewerRole = Role::create(['name' => 'Viewer', 'slug' => 'viewer', 'description' => 'Read-only access']);
+        $superAdmin = Role::firstOrCreate(['slug' => 'super-admin'], ['name' => 'Super Admin', 'description' => 'Full access to everything']);
+        $adminRole  = Role::firstOrCreate(['slug' => 'admin'], ['name' => 'Administrator', 'description' => 'Manages users and settings']);
+        $editorRole = Role::firstOrCreate(['slug' => 'editor'], ['name' => 'Editor', 'description' => 'Can edit and publish content']);
+        $viewerRole = Role::firstOrCreate(['slug' => 'viewer'], ['name' => 'Viewer', 'description' => 'Read-only access']);
 
         // ──────────────────────────────────────
         // 3. Create Permissions (grouped by module)
@@ -41,50 +45,50 @@ class DatabaseSeeder extends Seeder
         $perms = [];
 
         // Users module
-        $perms['users.index']   = Permission::create(['name' => 'List Users', 'slug' => 'users.index', 'module' => 'Users', 'description' => 'View the user list']);
-        $perms['users.create']  = Permission::create(['name' => 'Create Users', 'slug' => 'users.create', 'module' => 'Users', 'description' => 'Create new users']);
-        $perms['users.edit']    = Permission::create(['name' => 'Edit Users', 'slug' => 'users.edit', 'module' => 'Users', 'description' => 'Edit existing users']);
-        $perms['users.delete']  = Permission::create(['name' => 'Delete Users', 'slug' => 'users.delete', 'module' => 'Users', 'description' => 'Delete users from the system']);
+        $perms['users.index']   = Permission::firstOrCreate(['slug' => 'users.index'], ['name' => 'List Users', 'module' => 'Users', 'description' => 'View the user list']);
+        $perms['users.create']  = Permission::firstOrCreate(['slug' => 'users.create'], ['name' => 'Create Users', 'module' => 'Users', 'description' => 'Create new users']);
+        $perms['users.edit']    = Permission::firstOrCreate(['slug' => 'users.edit'], ['name' => 'Edit Users', 'module' => 'Users', 'description' => 'Edit existing users']);
+        $perms['users.delete']  = Permission::firstOrCreate(['slug' => 'users.delete'], ['name' => 'Delete Users', 'module' => 'Users', 'description' => 'Delete users from the system']);
 
         // Posts module
-        $perms['posts.index']   = Permission::create(['name' => 'List Posts', 'slug' => 'posts.index', 'module' => 'Posts', 'description' => 'View the post list']);
-        $perms['posts.create']  = Permission::create(['name' => 'Create Posts', 'slug' => 'posts.create', 'module' => 'Posts', 'description' => 'Create new posts']);
-        $perms['posts.edit']    = Permission::create(['name' => 'Edit Posts', 'slug' => 'posts.edit', 'module' => 'Posts', 'description' => 'Edit existing posts']);
-        $perms['posts.delete']  = Permission::create(['name' => 'Delete Posts', 'slug' => 'posts.delete', 'module' => 'Posts', 'description' => 'Delete posts']);
-        $perms['posts.publish'] = Permission::create(['name' => 'Publish Posts', 'slug' => 'posts.publish', 'module' => 'Posts', 'description' => 'Publish draft posts']);
+        $perms['posts.index']   = Permission::firstOrCreate(['slug' => 'posts.index'], ['name' => 'List Posts', 'module' => 'Posts', 'description' => 'View the post list']);
+        $perms['posts.create']  = Permission::firstOrCreate(['slug' => 'posts.create'], ['name' => 'Create Posts', 'module' => 'Posts', 'description' => 'Create new posts']);
+        $perms['posts.edit']    = Permission::firstOrCreate(['slug' => 'posts.edit'], ['name' => 'Edit Posts', 'module' => 'Posts', 'description' => 'Edit existing posts']);
+        $perms['posts.delete']  = Permission::firstOrCreate(['slug' => 'posts.delete'], ['name' => 'Delete Posts', 'module' => 'Posts', 'description' => 'Delete posts']);
+        $perms['posts.publish'] = Permission::firstOrCreate(['slug' => 'posts.publish'], ['name' => 'Publish Posts', 'module' => 'Posts', 'description' => 'Publish draft posts']);
 
         // Reports module
-        $perms['reports.view']   = Permission::create(['name' => 'View Reports', 'slug' => 'reports.view', 'module' => 'Reports', 'description' => 'Access analytics reports']);
-        $perms['reports.export'] = Permission::create(['name' => 'Export Reports', 'slug' => 'reports.export', 'module' => 'Reports', 'description' => 'Export reports as CSV/PDF']);
+        $perms['reports.view']   = Permission::firstOrCreate(['slug' => 'reports.view'], ['name' => 'View Reports', 'module' => 'Reports', 'description' => 'Access analytics reports']);
+        $perms['reports.export'] = Permission::firstOrCreate(['slug' => 'reports.export'], ['name' => 'Export Reports', 'module' => 'Reports', 'description' => 'Export reports as CSV/PDF']);
 
         // Settings module
-        $perms['settings.manage'] = Permission::create(['name' => 'Manage Settings', 'slug' => 'settings.manage', 'module' => 'Settings', 'description' => 'Change application settings']);
+        $perms['settings.manage'] = Permission::firstOrCreate(['slug' => 'settings.manage'], ['name' => 'Manage Settings', 'module' => 'Settings', 'description' => 'Change application settings']);
 
         // ──────────────────────────────────────
         // 4. Assign Permissions to Roles
         // ──────────────────────────────────────
-        $adminRole->givePermissionTo(
+        $adminRole->syncPermissions(
             'users.index', 'users.create', 'users.edit', 'users.delete',
             'posts.index', 'posts.create', 'posts.edit', 'posts.delete', 'posts.publish',
             'reports.view', 'reports.export',
             'settings.manage'
         );
 
-        $editorRole->givePermissionTo(
+        $editorRole->syncPermissions(
             'users.index',
             'posts.index', 'posts.create', 'posts.edit', 'posts.publish',
             'reports.view'
         );
 
-        $viewerRole->givePermissionTo(
+        $viewerRole->syncPermissions(
             'users.index', 'posts.index', 'reports.view'
         );
 
         // ──────────────────────────────────────
         // 5. Assign Roles to Users
         // ──────────────────────────────────────
-        $admin->assignRole($superAdmin);
-        $editor->assignRole($editorRole);
+        $admin->syncRoles($superAdmin);
+        $editor->syncRoles($editorRole);
 
         // ──────────────────────────────────────
         // 6. Create Simulated Secured Resources (routes)
@@ -109,23 +113,27 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($routes as $routeData) {
-            $resource = SecuredResource::create([
-                'identifier'        => $routeData['identifier'],
-                'method'            => $routeData['method'],
-                'uri'               => $routeData['uri'],
-                'controller_action' => $routeData['controller_action'],
-                'is_public'         => $routeData['is_public'] ?? false,
-                'operator'          => $routeData['operator'] ?? 'OR',
-            ]);
+            $resource = SecuredResource::firstOrCreate(
+                ['identifier' => $routeData['identifier']],
+                [
+                    'method'            => $routeData['method'],
+                    'uri'               => $routeData['uri'],
+                    'controller_action' => $routeData['controller_action'],
+                    'is_public'         => $routeData['is_public'] ?? false,
+                    'operator'          => $routeData['operator'] ?? 'OR',
+                ]
+            );
 
             // Link matching permissions to resources by identifier convention.
             $slug = $routeData['identifier'];
             if (isset($perms[$slug])) {
-                $resource->permissions()->attach($perms[$slug]->id);
+                $resource->permissions()->syncWithoutDetaching([$perms[$slug]->id]);
             }
         }
 
-        $this->command->info('✅ Demo data seeded: 2 users, 4 roles, 12 permissions, 16 resources.');
-        $this->command->info('   Login: admin@demo.test / password');
+        if (isset($this->command)) {
+            $this->command->info('✅ Demo data seeded: 2 users, 4 roles, 12 permissions, 16 resources.');
+            $this->command->info('   Login: admin@demo.test / password');
+        }
     }
 }

@@ -2,7 +2,9 @@
 
 return [
     'title'                 => 'Dashboard',
-    'subtitle'              => 'Panoramica del tuo sistema ACL',
+    'subtitle'              => 'Panoramica e stato di salute del tuo sistema ACL',
+    'security_health'       => 'Stato di Copertura della Sicurezza',
+    'security_health_desc'  => 'Percentuale di rotte e risorse protette da permessi, solo Super Admin o pubbliche',
     'stat_users'            => 'Utenti',
     'stat_roles'            => 'Ruoli',
     'stat_permissions'      => 'Permessi',
@@ -10,7 +12,7 @@ return [
     'stat_custom_resources' => 'Risorse Custom',
     'stat_protected'        => 'Protette',
     'stat_public'           => 'Pubbliche',
-    'stat_unlinked'         => 'Non Collegate (Senza Permessi)',
+    'stat_unlinked'         => 'Senza Permessi Assegnati',
     'stat_deprecated'       => 'Deprecate',
     'recent_resources'      => 'Risorse Modificate di Recente',
     'view_all'              => 'Vedi Tutte →',

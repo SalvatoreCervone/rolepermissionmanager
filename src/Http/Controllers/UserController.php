@@ -16,10 +16,7 @@ class UserController extends Controller
      */
     protected function getUserModelClass(): string
     {
-        return config(
-            'rolepermissionmanager.models.user',
-            config('auth.providers.users.model', 'App\\Models\\User')
-        );
+        return AclRegistry::getUserModelClass();
     }
 
     /**

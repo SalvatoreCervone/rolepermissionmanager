@@ -11,16 +11,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $userModelClass = config('rolepermissionmanager.models.user');
-        if (!$userModelClass || !class_exists($userModelClass)) {
-            $userModelClass = config('auth.providers.users.model');
-        }
-        if ((!$userModelClass || !class_exists($userModelClass)) && class_exists('App\\Models\\User')) {
-            $userModelClass = 'App\\Models\\User';
-        }
-        if ((!$userModelClass || !class_exists($userModelClass)) && class_exists('Workbench\\App\\Models\\User')) {
-            $userModelClass = 'Workbench\\App\\Models\\User';
-        }
+        $userModelClass = \SalvatoreCervone\RolePermissionManager\Services\AclRegistry::getUserModelClass();
 
         $totalUsers = 0;
         if ($userModelClass && class_exists($userModelClass)) {
@@ -31,23 +22,41 @@ class DashboardController extends Controller
             }
         }
 
+        $totalRoutes = SecuredResource::routes()->active()->count();
+        $totalCustom = SecuredResource::custom()->active()->count();
+        $totalActive = SecuredResource::active()->count();
+
+        $publicCount = SecuredResource::active()->public()->count();
+        $superAdminCount = SecuredResource::active()->superAdminOnly()->count();
+        $protectedCount = SecuredResource::active()->protected()->count();
+
+        // Protected with permissions assigned (excluding super admin only which is inherently secured):
+        $withPermsCount = SecuredResource::active()->protected()->notSuperAdminOnly()->has('permissions')->count();
+
+        // Protected with 0 permissions assigned (unassigned / needs configuration):
+        $unlinkedCount = SecuredResource::active()->protected()->notSuperAdminOnly()->doesntHave('permissions')->count();
+
+        // Properly secured = Public (by intention) + Super Admin only (by rule) + Protected with assigned permissions:
+        $securedProperly = $publicCount + $superAdminCount + $withPermsCount;
+        $coveragePct = $totalActive > 0 ? round(($securedProperly / $totalActive) * 100) : 100;
+
         $stats = [
             'total_users'            => $totalUsers,
             'total_roles'            => Role::count(),
             'total_permissions'      => Permission::count(),
-            'total_routes'           => SecuredResource::routes()->where('is_deprecated', false)->count(),
-            'total_custom_resources' => SecuredResource::custom()->count(),
-            'total_resources'        => SecuredResource::where('is_deprecated', false)->count(),
-            'public_resources'       => SecuredResource::where('is_public', true)->where('is_deprecated', false)->count(),
-            'protected_resources'    => SecuredResource::where('is_public', false)->where('is_deprecated', false)->count(),
-            'deprecated_resources'   => SecuredResource::where('is_deprecated', true)->count(),
-            'unlinked_resources'     => SecuredResource::where('is_deprecated', false)
-                ->where('is_public', false)
-                ->whereDoesntHave('permissions')
-                ->count(),
+            'total_routes'           => $totalRoutes,
+            'total_custom_resources' => $totalCustom,
+            'total_resources'        => $totalActive,
+            'public_resources'       => $publicCount,
+            'protected_resources'    => $protectedCount,
+            'super_admin_resources'  => $superAdminCount,
+            'with_perms_resources'   => $withPermsCount,
+            'unlinked_resources'     => $unlinkedCount,
+            'coverage_percentage'    => $coveragePct,
         ];
 
-        $recentResources = SecuredResource::where('is_deprecated', false)
+        $recentResources = SecuredResource::active()
+            ->with('permissions')
             ->orderByDesc('updated_at')
             ->limit(10)
             ->get();

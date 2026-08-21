@@ -524,14 +524,28 @@
             <a href="{{ route('acl.permissions.index') }}" class="{{ request()->routeIs('acl.permissions.*') ? 'active' : '' }}">
                 <span class="icon">🔑</span> {{ __('acl::nav.permissions') }}
             </a>
+            <a href="{{ route('acl.matrix.index') }}" class="{{ request()->routeIs('acl.matrix.*') ? 'active' : '' }}">
+                <span class="icon">🔲</span> {{ __('acl::nav.matrix') }}
+            </a>
             <a href="{{ route('acl.routes.index') }}" class="{{ request()->routeIs('acl.routes.*') ? 'active' : '' }}">
                 <span class="icon">🛤️</span> {{ __('acl::nav.routes') }}
             </a>
             <a href="{{ route('acl.resources.index') }}" class="{{ request()->routeIs('acl.resources.*') ? 'active' : '' }}">
                 <span class="icon">📦</span> {{ __('acl::nav.resources') }}
             </a>
+
+            <div class="nav-section">{{ __('acl::nav.tools') }}</div>
+            <a href="{{ route('acl.simulator.index') }}" class="{{ request()->routeIs('acl.simulator.*') ? 'active' : '' }}">
+                <span class="icon">🔍</span> {{ __('acl::nav.simulator') }}
+            </a>
             <a href="{{ route('acl.scanner_rules.index') }}" class="{{ request()->routeIs('acl.scanner_rules.*') ? 'active' : '' }}">
                 <span class="icon">⚙️</span> {{ __('acl::nav.scanner_rules') }}
+            </a>
+            <a href="{{ route('acl.export_import.index') }}" class="{{ request()->routeIs('acl.export_import.*') ? 'active' : '' }}">
+                <span class="icon">💾</span> {{ __('acl::nav.export_import') }}
+            </a>
+            <a href="{{ route('acl.audit_logs.index') }}" class="{{ request()->routeIs('acl.audit_logs.*') ? 'active' : '' }}">
+                <span class="icon">📜</span> {{ __('acl::nav.audit_logs') }}
             </a>
 
             <div class="nav-section">{{ __('acl::nav.actions') }}</div>

@@ -68,9 +68,9 @@ class RouteResourceController extends Controller
         }
         if ($request->filled('status')) {
             match ($request->get('status')) {
-                'public'      => $query->where('is_public', true)->where('is_deprecated', false),
-                'protected'   => $query->where('is_public', false)->where('is_super_admin_only', false)->where('is_deprecated', false),
-                'super_admin' => $query->where('is_super_admin_only', true)->where('is_deprecated', false),
+                'public'      => $query->public()->active(),
+                'protected'   => $query->protected()->notSuperAdminOnly()->active(),
+                'super_admin' => $query->superAdminOnly()->active(),
                 'deprecated'  => $query->where('is_deprecated', true),
                 default       => null,
             };

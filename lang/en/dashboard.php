@@ -2,7 +2,9 @@
 
 return [
     'title'                 => 'Dashboard',
-    'subtitle'              => 'Overview of your Access Control Layer',
+    'subtitle'              => 'Overview and health status of your ACL system',
+    'security_health'       => 'Security Coverage Health',
+    'security_health_desc'  => 'Percentage of routes and resources protected by permissions, super admin only, or explicitly public',
     'stat_users'            => 'Users',
     'stat_roles'            => 'Roles',
     'stat_permissions'      => 'Permissions',
@@ -10,7 +12,7 @@ return [
     'stat_custom_resources' => 'Custom Resources',
     'stat_protected'        => 'Protected',
     'stat_public'           => 'Public',
-    'stat_unlinked'         => 'Unlinked (No Permissions)',
+    'stat_unlinked'         => 'Without Assigned Permissions',
     'stat_deprecated'       => 'Deprecated',
     'recent_resources'      => 'Recently Modified Resources',
     'view_all'              => 'View All →',

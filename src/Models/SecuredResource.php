@@ -67,7 +67,9 @@ class SecuredResource extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('is_deprecated', false);
+        return $query->where(function ($q) {
+            $q->where('is_deprecated', false)->orWhereNull('is_deprecated');
+        });
     }
 
     /**
@@ -101,7 +103,9 @@ class SecuredResource extends Model
      */
     public function scopeProtected($query)
     {
-        return $query->where('is_public', false);
+        return $query->where(function ($q) {
+            $q->where('is_public', false)->orWhereNull('is_public');
+        });
     }
 
     /**
@@ -110,6 +114,16 @@ class SecuredResource extends Model
     public function scopeSuperAdminOnly($query)
     {
         return $query->where('is_super_admin_only', true);
+    }
+
+    /**
+     * Scope to resources not exclusively reserved for Super Admin.
+     */
+    public function scopeNotSuperAdminOnly($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('is_super_admin_only', false)->orWhereNull('is_super_admin_only');
+        });
     }
 
     /**
@@ -125,7 +139,7 @@ class SecuredResource extends Model
      */
     public function isCustom(): bool
     {
-        return $this->type === self::TYPE_CUSTOM;
+        return ($this->type ?? self::TYPE_ROUTE) === self::TYPE_CUSTOM;
     }
 
     /**
@@ -133,43 +147,38 @@ class SecuredResource extends Model
      */
     public function isSuperAdminOnly(): bool
     {
-        return (bool) $this->is_super_admin_only;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * Get the permission slugs required for this resource.
-     */
-    public function getRequiredPermissionSlugs(): array
-    {
-        return $this->permissions->pluck('slug')->all();
+        return (bool) ($this->is_super_admin_only ?? false);
     }
 
     /**
-     * Check if a user satisfies the permission requirements for this resource.
-     *
-     * @param  array  $userPermissionSlugs  The slugs of permissions the user possesses.
+     * Check if this resource is public (no authentication required).
      */
-    public function isAccessibleBy(array $userPermissionSlugs): bool
+    public function isPublic(): bool
     {
-        $requiredSlugs = $this->getRequiredPermissionSlugs();
+        return (bool) ($this->is_public ?? false);
+    }
 
-        // If no permissions are required, only SuperAdmin can access (handled in middleware).
-        if (empty($requiredSlugs)) {
-            return false;
-        }
+    /**
+     * Check if this resource is protected (authentication + permissions required).
+     */
+    public function isProtected(): bool
+    {
+        return !$this->isPublic();
+    }
 
-        if ($this->operator === 'AND') {
-            // User must have ALL required permissions.
-            return empty(array_diff($requiredSlugs, $userPermissionSlugs));
-        }
+    /**
+     * Check if this resource has any permissions attached.
+     */
+    public function hasPermissions(): bool
+    {
+        return $this->permissions()->exists();
+    }
 
-        // OR: User needs at least ONE of the required permissions.
-        return !empty(array_intersect($requiredSlugs, $userPermissionSlugs));
+    /**
+     * Check if this resource is deprecated.
+     */
+    public function isDeprecated(): bool
+    {
+        return (bool) ($this->is_deprecated ?? false);
     }
 }

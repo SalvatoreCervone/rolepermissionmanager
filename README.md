@@ -35,13 +35,17 @@ When business rules change, developers must edit controllers, routes, commit, an
 - 🚀 **Zero Hardcoding** — Define clean routes without cluttering them with `permission:...` middleware
 - 🔍 **Route Auto-Discovery** — `php artisan acl:sync` scans your routes and registers new endpoints automatically
 - 📦 **Custom Resources Support** — Create, manage, and protect arbitrary classes, methods, services, or UI actions from the panel
+- 🔲 **Interactive Role-Permission Matrix** — Spreadsheet-style pivot matrix (`/acl-admin/matrix`) with real-time AJAX permission toggling
+- 🔍 **Access Simulator & Diagnostic Tester** — Test user authorization step-by-step from both the UI (`/acl-admin/simulator`) and CLI (`php artisan acl:check`)
+- 💾 **JSON Export & Import** — Seamlessly transfer entire ACL configurations across environments (*Local ➔ Staging ➔ Production*) via web UI or CLI (`php artisan acl:export`/`acl:import`)
+- ⚡ **Bulk Actions on Routes & Resources** — Mass-assign permissions, set Super Admin only flags, or change visibility with one click
+- 📜 **Audit Trail & Activity Log** — Complete history tracking of who changed which role, permission, or route (`/acl-admin/audit-logs`)
 - ⏰ **Automated Scheduler** — Configurable daily route synchronization to catch new endpoints
 - 🛡️ **Single Dynamic Interceptor** — `DynamicAclGuard` middleware evaluates requests against cached ACL rules
-- ⚡ **High Performance & Low Latency** — Complete cache layer (Redis/File/Memory) with automatic invalidation on Eloquent events
+- ⚡ **High Performance & Low Latency** — Complete cache layer (Redis/File/Memory) with automatic invalidation on Eloquent events (0 DB queries per request)
 - 🎛️ **AND / OR Permission Operators** — Choose whether a resource requires _all_ or _at least one_ of the linked permissions
 - 👑 **Super Admin Bypass & Dedicated Protection** — Configurable super admin role that bypasses checks, plus a single-click toggle to reserve any route/resource exclusively for Super Admins
-- 👤 **User Access Management** — Manage user roles and direct permissions with live autocomplete search
-- 🖥️ **Built-in Web Admin Panel** — Modern, dark-themed dashboard for managing Roles, Permissions, HTTP Routes, Custom Resources, and Users
+- 👤 **User Access Management** — Manage user roles and direct permissions with multi-column display support (e.g. `['name', 'cognome']`) and live autocomplete
 - 🎨 **Blade Directives** — `@role`, `@haspermission`, `@canRoute`, and `@canResource` for views
 - 🔌 **Native Laravel Gate Integration** — Works seamlessly with `$user->can()` and `@can`
 - 📦 **Polymorphic Architecture** — Works with any Authenticatable model (User, Admin, Member, etc.)
@@ -81,23 +85,6 @@ Or publish individual components using specific tags:
 | **Blade Views** (Optional)    | `php artisan vendor:publish --tag=rolepermissionmanager-views`      | `resources/views/vendor/acl/`               |
 | **Routes** (Optional)         | `php artisan vendor:publish --tag=rolepermissionmanager-routes`     | `routes/acl-web.php` & `routes/acl-api.php` |
 
-```bash
-# 1. Config file (custom table names, cache TTL, super admin, locale, etc.)
-php artisan vendor:publish --tag=rolepermissionmanager-config
-
-# 2. Database migrations (7 ACL tables)
-php artisan vendor:publish --tag=rolepermissionmanager-migrations
-
-# 3. (Optional) Language files for custom translations (EN & IT included)
-php artisan vendor:publish --tag=rolepermissionmanager-lang
-
-# 4. (Optional) Admin panel Blade views for custom branding & UI styling
-php artisan vendor:publish --tag=rolepermissionmanager-views
-
-# 5. (Optional) Custom route files for extending Web & API endpoints
-php artisan vendor:publish --tag=rolepermissionmanager-routes
-```
-
 ### 3. Run Database Migrations
 
 ```bash
@@ -114,6 +101,7 @@ This creates 8 tables (customizable in config):
 - `acl_model_has_permissions` (polymorphic pivot)
 - `acl_role_has_permissions` (pivot)
 - `acl_permission_has_resources` (pivot)
+- `acl_audit_logs` (audit history)
 
 ---
 
@@ -147,263 +135,101 @@ Output:
 
 ```
 🔍 Scanning routes...
-
-+-------------------------------+-------+
-| Action                        | Count |
-+-------------------------------+-------+
-| 📗 New routes registered      | 16    |
-| 📘 Existing routes updated    | 0     |
-| 📙 Routes deprecated (soft)   | 0     |
-| 📕 Routes removed (hard)      | 0     |
-| ⏭️  Routes skipped (excluded)  | 4     |
-+-------------------------------+-------+
-
-✅ ACL route sync completed. Cache refreshed.
++-----------------------+--------+----------------------+------------------------------------------------+
+| Identifier            | Method | URI                  | Action                                         |
++-----------------------+--------+----------------------+------------------------------------------------+
+| dashboard             | GET    | /dashboard           | App\Http\Controllers\DashboardController@index |
+| invoices.index        | GET    | /invoices            | App\Http\Controllers\InvoiceController@index   |
+| invoices.create       | GET    | /invoices/create     | App\Http\Controllers\InvoiceController@create  |
+| invoices.store        | POST   | /invoices            | App\Http\Controllers\InvoiceController@store   |
+| invoices.destroy      | DELETE | /invoices/{id}       | App\Http\Controllers\InvoiceController@destroy |
++-----------------------+--------+----------------------+------------------------------------------------+
+✔ Discovered 5 new routes. Cache refreshed.
 ```
 
-### 3. Write Clean Routes (No Middleware Hardcoding!)
+### 3. Open the Web Admin Panel
 
-```php
-// routes/web.php or routes/api.php
-Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
-Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
-```
+Navigate to `https://your-domain.com/acl-admin` (protected by `['web', 'auth']` middleware by default).
 
-The global `DynamicAclGuard` middleware intercepts every request and verifies access dynamically against the cached ACL registry.
+From the panel you can:
+- **🔲 Role-Permission Matrix** (`/acl-admin/matrix`): Toggle permissions per role in real time.
+- **🔍 Access Simulator** (`/acl-admin/simulator`): Select any User and Route to run real-time authorization diagnostics.
+- **⚡ Bulk Actions** (`/acl-admin/routes`): Select multiple routes to apply permissions or Super Admin flags in bulk.
+- **💾 Export & Import** (`/acl-admin/export-import`): Download JSON backups or import ACL settings from other environments.
+- **📜 Audit Logs** (`/acl-admin/audit-logs`): Review full historical tracking of authorization changes.
+- **👤 Users & Access** (`/acl-admin/users`): Assign roles and direct permissions to users.
+- **⚙️ Scanner Rules** (`/acl-admin/scanner-rules`): Manage route exclusions and auto-registration patterns.
 
 ---
 
-## 🖥️ Web Administration Panel
+## 🛠️ Artisan Commands
 
-The package includes a modern, zero-dependency admin dashboard accessible at `/acl-admin`:
+```bash
+# 1. Route Synchronization
+php artisan acl:sync                                         # Basic route scan and cache rebuild
+php artisan acl:sync --clean                                 # Remove deprecated routes from DB
+php artisan acl:sync --auto-permissions                      # Auto-create permissions for new routes
+php artisan acl:sync --clean --auto-permissions --notify     # Complete sync with verbose log
 
-```
-/acl-admin
-├── /                       → Dashboard (KPIs, statistics, recent resources, sync trigger)
-├── /users                  → Users list with live autocomplete search & filter by role
-├── /users/{id}/edit        → Assign/remove roles & direct permissions for a user
-├── /roles                  → Roles list with permission counts
-├── /roles/create           → Create role (auto-slug generator)
-├── /roles/{id}/edit        → Edit role & assign permissions (grouped by module)
-├── /permissions            → Permissions list with module filters
-├── /permissions/create     → Create permission with module classification
-├── /permissions/{id}/edit  → Edit permission & view linked roles/resources
-├── /resources              → Secured routes list with method/status/search filters
-└── /resources/{id}/edit    → Configure route (Public/Protected, OR/AND operator, permissions)
+# 2. Access Diagnostics & Simulation
+php artisan acl:check 1 invoices.destroy                     # Check user ID 1 against a route
+php artisan acl:check admin@company.com "CorsoController@dettagliocorsi"
+
+# 3. Export & Import Configuration
+php artisan acl:export                                       # Export to storage/app/acl-export-*.json
+php artisan acl:export --path=/path/to/custom-backup.json
+php artisan acl:import /path/to/acl-export.json              # Merge configuration
+php artisan acl:import /path/to/acl-export.json --overwrite  # Overwrite existing associations
 ```
 
 ---
 
-## 📖 Usage & API Reference
-
-### Role Management
-
-```php
-use SalvatoreCervone\RolePermissionManager\Models\Role;
-
-// Create or retrieve roles
-$admin = Role::findOrCreate('admin', 'Administrator');
-$editor = Role::findOrCreate('editor', 'Content Editor');
-
-// Assign roles to a user
-$user->assignRole('admin');
-$user->assignRole('editor', 'writer'); // Multiple roles
-$user->assignRole($admin);            // By model instance
-
-// Remove roles
-$user->removeRole('editor');
-
-// Replace all roles
-$user->syncRoles('admin', 'finance');
-
-// Role checks
-$user->hasRole('admin');              // bool
-$user->hasAnyRole('admin', 'editor'); // bool
-$user->hasAllRoles('admin', 'editor');// bool
-```
-
-### Permission Management
-
-```php
-use SalvatoreCervone\RolePermissionManager\Models\Permission;
-
-// Create permissions with module grouping
-$viewUsers = Permission::findOrCreate('users.view', 'View Users', 'Users');
-$deleteUsers = Permission::findOrCreate('users.delete', 'Delete Users', 'Users');
-
-// Give permissions to roles
-$admin->givePermissionTo('users.view', 'users.delete');
-$admin->revokePermissionTo('users.delete');
-$admin->syncPermissions('users.view');
-
-// Direct permissions on users (independent of roles)
-$user->givePermissionTo('reports.export');
-$user->revokePermissionTo('reports.export');
-$user->syncPermissions('reports.export', 'logs.view');
-
-// Permission checks (inherits from roles + direct permissions)
-$user->hasPermission('users.view');              // bool
-$user->hasAnyPermission('users.view', 'users.edit'); // bool
-$user->hasAllPermissions('users.view', 'users.delete'); // bool
-
-// Get all permission slugs for user
-$permissions = $user->getAllPermissions(); // array of slugs
-```
-
-### Route-Level Access Verification
-
-```php
-// Check if user has permission to access a specific route
-if ($user->canAccessRoute('invoices.destroy')) {
-    // Show delete button or perform action
-}
-```
-
-### Blade Directives
+## 🎨 Blade Directives
 
 ```blade
-{{-- Check Role --}}
+{{-- 1. Check Role --}}
 @role('admin')
-    <a href="/admin">Admin Area</a>
+    <a href="/admin/settings">Admin Settings</a>
 @endrole
 
-{{-- Check Permission --}}
-@haspermission('users.export')
-    <button>Export Users</button>
+{{-- 2. Check Permission (Direct or via Role) --}}
+@haspermission('invoices.export')
+    <button>Export CSV</button>
 @endhaspermission
 
-{{-- Check Route Access dynamically --}}
+{{-- 3. Check Route Access --}}
 @canRoute('invoices.destroy')
-    <button class="btn-danger">Delete Invoice</button>
+    <button class="btn-delete">Delete Invoice</button>
 @endcanRoute
 
-{{-- Check Custom Resource Access (classes, methods, UI elements) --}}
+{{-- 4. Check Custom Resource Access --}}
 @canResource('CorsoController@dettagliocorsi')
-    <button class="btn-primary">View Course Details</button>
+    <button class="btn-info">View Details</button>
 @endcanResource
 ```
-
-### Programmatic Resource Authorization
-
-You can check access or enforce authorization for any route or custom resource directly in PHP code:
-
-```php
-use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
-
-// Check if user has access (returns boolean)
-if (AclRegistry::hasAccess('CorsoController@dettagliocorsi')) {
-    // Authorized
-}
-
-// Enforce authorization (throws UnauthorizedException / 403 if denied)
-AclRegistry::authorize('CorsoController@dettagliocorsi');
-```
-
-### Native Laravel Gate Integration
-
-The package hooks into Laravel's `Gate::before`, allowing standard `@can` and `$user->can()` checks:
-
-```blade
-@can('users.delete')
-    <button>Delete</button>
-@endcan
-```
-
-````php
-if ($request->user()->can('invoices.export')) {
-    // Authorized
-}
-### Menu & Navigation Tree Filtering
-
-Filter dynamic, nested sidebar/menu structures (e.g., PrimeVue, PrimeReact, Admin menus) automatically based on the user's permissions and roles:
-
-```php
-$menu = [
-    [
-        'label'    => 'Uff. Valutazioni',
-        'icon'     => 'pi pi-fw pi-home',
-        'permessi' => ['scrivi_rapportoinformativo', 'scrivi_anagraficarelazionedirigenziale'],
-        'items'    => [
-            [
-                'label'    => 'Organico RI',
-                'url'      => '/rapportiinformativi/match',
-                'permessi' => ['scrivi_rapportoinformativo'],
-            ],
-            [
-                'label'    => 'Organico RD',
-                'url'      => '/relazionidirigenziali/match',
-                'permessi' => ['scrivi_anagraficarelazionedirigenziale'],
-            ],
-        ],
-    ],
-];
-
-// Returns only the items and sub-items the user is authorized to see
-$filteredMenu = auth()->user()->filterNavigation($menu);
-// Or via static helper:
-$filteredMenu = \SalvatoreCervone\RolePermissionManager\Services\AclRegistry::filterMenu($menu);
-````
 
 ---
 
 ## ⚙️ Configuration Reference
 
-File: `config/rolepermissionmanager.php`
+Key settings in `config/rolepermissionmanager.php`:
 
 ```php
 return [
 
-    // Customizable database table names
-    'tables' => [
-        'roles'                    => 'acl_roles',
-        'permissions'              => 'acl_permissions',
-        'secured_resources'        => 'acl_secured_resources',
-        'model_has_roles'          => 'acl_model_has_roles',
-        'model_has_permissions'    => 'acl_model_has_permissions',
-        'role_has_permissions'     => 'acl_role_has_permissions',
-        'permission_has_resources' => 'acl_permission_has_resources',
-    ],
-
-    // Model classes
-    'models' => [
-        'user'              => App\Models\User::class,
-        'role'              => SalvatoreCervone\RolePermissionManager\Models\Role::class,
-        'permission'        => SalvatoreCervone\RolePermissionManager\Models\Permission::class,
-        'secured_resource'  => SalvatoreCervone\RolePermissionManager\Models\SecuredResource::class,
-    ],
-
-    // User model and autocomplete search configuration
+    // User Model & Search Configuration
     'users' => [
         'table'             => 'users',
-        'searchable_fields' => ['name', 'email'], // Columns searched by autocomplete
-        'display_field'     => 'name',            // Primary label column
-        'secondary_field'   => 'email',           // Sub-label in autocomplete
+        'searchable_fields' => ['name', 'cognome', 'email'],
+        
+        // Single column or array of columns concatenated with space:
+        'display_field'     => ['name', 'cognome'],           // e.g. "Mario Rossi"
+        'secondary_field'   => ['matricola', 'email'],        // e.g. "MAT12345 mario@company.it"
         'per_page'          => 25,
     ],
 
-    // Super Admin role slug (bypasses all checks)
-    'super_admin_role' => 'super-admin',
-
-    // Cache settings
-    'cache' => [
-        'store'  => null,    // null = default store (Redis, Memcached, File)
-        'ttl'    => 86400,   // 24 hours (0 = forever)
-        'prefix' => 'acl_',
-    ],
-
-    // Route scanner settings
-    'scanner' => [
-        'excluded_prefixes' => [
-            '_ignition', '_debugbar', 'sanctum', 'telescope', 'horizon', 'livewire',
-        ],
-        'excluded_names' => [
-            'login', 'logout', 'register', 'password.request', 'password.reset',
-        ],
-        'default_is_public'       => false, // Secure by default
-        'default_operator'        => 'OR',  // 'OR' or 'AND'
-        'auto_create_permissions' => false,
-    ],
+    // Super Admin Bypass
+    'super_admin_role' => 'super-admin', // null to disable
 
     // Middleware settings
     'middleware' => [
@@ -437,30 +263,9 @@ return [
 
 ---
 
-## 🛠️ Artisan Commands
+## 🧪 Testing & Standalone Preview
 
-```bash
-# Basic route scan and cache rebuild
-php artisan acl:sync
-
-# Remove routes from DB that no longer exist in code
-php artisan acl:sync --clean
-
-# Automatically create permissions for all newly discovered routes
-php artisan acl:sync --auto-permissions
-
-# Detailed verbose logging of scanned routes
-php artisan acl:sync --notify
-
-# Complete sync with cleanup, permission creation, and notification
-php artisan acl:sync --clean --auto-permissions --notify
-```
-
----
-
-## 🧪 Testing & Workbench Preview
-
-Run the PHPUnit test suite:
+Run the test suite:
 
 ```bash
 composer test
@@ -469,8 +274,6 @@ composer test
 ```
 
 ### Standalone Workbench Preview (No full app required!)
-
-You can run and test the complete package and admin panel in an isolated SQLite workbench:
 
 ```bash
 # 1. Run migrations and seed demo data
@@ -481,7 +284,6 @@ php vendor/bin/testbench serve --port=8080
 ```
 
 Open [http://127.0.0.1:8080](http://127.0.0.1:8080) and log in with:
-
 - **Email**: `admin@demo.test`
 - **Password**: `password`
 
