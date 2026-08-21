@@ -46,7 +46,7 @@
     <div style="display: flex; gap: 20px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap;">
         <span style="display: flex; align-items: center; gap: 6px;">
             <span style="width: 10px; height: 10px; border-radius: 2px; background: var(--info);"></span>
-            {{ __('acl::routes.protected') }} ({{ $stats['with_perms_resources'] }})
+            {{ __('acl::dashboard.stat_with_perms') }} ({{ $stats['with_perms_resources'] }})
         </span>
         <span style="display: flex; align-items: center; gap: 6px;">
             <span style="width: 10px; height: 10px; border-radius: 2px; background: #eab308;"></span>
