@@ -7,6 +7,7 @@ use Illuminate\Routing\Controller;
 use SalvatoreCervone\RolePermissionManager\Models\Permission;
 use SalvatoreCervone\RolePermissionManager\Models\Role;
 use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+use SalvatoreCervone\RolePermissionManager\Services\AuditLogger;
 
 class RoleController extends Controller
 {
@@ -34,8 +35,10 @@ class RoleController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
-        Role::create($validated);
+        $role = Role::create($validated);
         AclRegistry::flushResourcesCache();
+
+        AuditLogger::log('role_created', 'Role', $role->name, "Created role '{$role->name}' ({$role->slug})");
 
         return redirect()
             ->route('acl.roles.index')
@@ -71,6 +74,9 @@ class RoleController extends Controller
         $role->permissions()->sync($validated['permissions'] ?? []);
         AclRegistry::flushResourcesCache();
 
+        $permsCount = count($validated['permissions'] ?? []);
+        AuditLogger::log('role_updated', 'Role', $role->name, "Updated role '{$role->name}' with {$permsCount} permissions");
+
         return redirect()
             ->route('acl.roles.edit', $id)
             ->with('success', __('acl::roles.updated_success', ['name' => $role->name]));
@@ -84,6 +90,8 @@ class RoleController extends Controller
         $role->permissions()->detach();
         $role->delete();
         AclRegistry::flushResourcesCache();
+
+        AuditLogger::log('role_deleted', 'Role', $name, "Deleted role '{$name}'");
 
         return redirect()
             ->route('acl.roles.index')

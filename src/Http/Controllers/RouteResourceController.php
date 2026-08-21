@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 use SalvatoreCervone\RolePermissionManager\Models\Permission;
 use SalvatoreCervone\RolePermissionManager\Models\SecuredResource;
 use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+use SalvatoreCervone\RolePermissionManager\Services\AuditLogger;
 use SalvatoreCervone\RolePermissionManager\Services\RouteScanner;
 
 class RouteResourceController extends Controller
@@ -127,6 +128,8 @@ class RouteResourceController extends Controller
         $resource->permissions()->sync($validated['permissions'] ?? []);
         AclRegistry::refreshCache();
 
+        AuditLogger::log('route_updated', 'Route', $resource->identifier, "Updated route '{$resource->identifier}' access configuration");
+
         return redirect()
             ->route('acl.routes.edit', $id)
             ->with('success', __('acl::routes.updated_success', ['identifier' => $resource->identifier]));
@@ -197,6 +200,8 @@ class RouteResourceController extends Controller
 
         AclRegistry::refreshCache();
 
+        AuditLogger::log('routes_bulk_updated', 'Route', "{$count} routes", "Bulk applied action '{$action}' to {$count} routes");
+
         return redirect()
             ->route('acl.routes.index')
             ->with('success', __('acl::routes.bulk_updated_success', ['count' => $count]));
@@ -209,6 +214,8 @@ class RouteResourceController extends Controller
     {
         Artisan::call('acl:sync', ['--notify' => true]);
         $output = Artisan::output();
+
+        AuditLogger::log('routes_synced', 'RouteScanner', 'Sync Routes', 'Executed route synchronization from Web UI');
 
         return redirect()
             ->route('acl.routes.index')

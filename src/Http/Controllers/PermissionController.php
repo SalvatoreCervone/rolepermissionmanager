@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use SalvatoreCervone\RolePermissionManager\Models\Permission;
 use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+use SalvatoreCervone\RolePermissionManager\Services\AuditLogger;
 
 class PermissionController extends Controller
 {
@@ -42,8 +43,10 @@ class PermissionController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
-        Permission::create($validated);
+        $permission = Permission::create($validated);
         AclRegistry::flushResourcesCache();
+
+        AuditLogger::log('permission_created', 'Permission', $permission->slug, "Created permission '{$permission->name}' [Module: " . ($permission->module ?: 'General') . "]");
 
         return redirect()
             ->route('acl.permissions.index')
@@ -72,6 +75,8 @@ class PermissionController extends Controller
         $permission->update($validated);
         AclRegistry::flushResourcesCache();
 
+        AuditLogger::log('permission_updated', 'Permission', $permission->slug, "Updated permission '{$permission->name}'");
+
         return redirect()
             ->route('acl.permissions.edit', $id)
             ->with('success', __('acl::permissions.updated_success', ['name' => $permission->name]));
@@ -81,11 +86,14 @@ class PermissionController extends Controller
     {
         $permission = Permission::findOrFail($id);
         $name = $permission->name;
+        $slug = $permission->slug;
 
         $permission->roles()->detach();
         $permission->securedResources()->detach();
         $permission->delete();
         AclRegistry::flushResourcesCache();
+
+        AuditLogger::log('permission_deleted', 'Permission', $slug, "Deleted permission '{$name}' ({$slug})");
 
         return redirect()
             ->route('acl.permissions.index')

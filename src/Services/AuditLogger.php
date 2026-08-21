@@ -13,7 +13,8 @@ class AuditLogger
     public static function log(string $action, ?string $targetType = null, ?string $targetIdentifier = null, ?string $details = null): ?AuditLog
     {
         try {
-            $user = Auth::user();
+            $guard = config('rolepermissionmanager.middleware.guard');
+            $user = ($guard && auth()->guard($guard)->check()) ? auth()->guard($guard)->user() : Auth::user();
             $userId = $user ? $user->getAuthIdentifier() : null;
             $userName = $user ? ($user->name ?? $user->email ?? "User #{$userId}") : 'System';
 

@@ -5,6 +5,7 @@ namespace SalvatoreCervone\RolePermissionManager\Http\Controllers;
 use Illuminate\Http\Request;
 use SalvatoreCervone\RolePermissionManager\Models\ScannerRule;
 use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+use SalvatoreCervone\RolePermissionManager\Services\AuditLogger;
 
 class ScannerRuleController
 {
@@ -45,6 +46,8 @@ class ScannerRuleController
 
         AclRegistry::refreshCache();
 
+        AuditLogger::log('scanner_rule_created', 'ScannerRule', $rule->pattern, "Created scanner {$rule->type} rule for target '{$rule->target}' with pattern '{$rule->pattern}'");
+
         return redirect()
             ->route('acl.scanner_rules.index')
             ->with('success', __('acl::scanner.rule_created', ['pattern' => $rule->pattern]));
@@ -64,6 +67,9 @@ class ScannerRuleController
 
         AclRegistry::refreshCache();
 
+        $status = $rule->is_active ? 'enabled' : 'disabled';
+        AuditLogger::log('scanner_rule_toggled', 'ScannerRule', $rule->pattern, "Scanner rule '{$rule->pattern}' {$status}");
+
         return redirect()
             ->route('acl.scanner_rules.index')
             ->with('success', __('acl::scanner.rule_toggled', ['pattern' => $rule->pattern]));
@@ -80,6 +86,8 @@ class ScannerRuleController
 
         $rule->delete();
         AclRegistry::refreshCache();
+
+        AuditLogger::log('scanner_rule_deleted', 'ScannerRule', $pattern, "Deleted scanner rule '{$pattern}'");
 
         return redirect()
             ->route('acl.scanner_rules.index')

@@ -8,6 +8,7 @@ use Illuminate\Routing\Controller;
 use SalvatoreCervone\RolePermissionManager\Models\Permission;
 use SalvatoreCervone\RolePermissionManager\Models\Role;
 use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+use SalvatoreCervone\RolePermissionManager\Services\AuditLogger;
 
 class UserController extends Controller
 {
@@ -209,6 +210,10 @@ class UserController extends Controller
 
         $displayField = config('rolepermissionmanager.users.display_field', 'name');
         $userName = static::formatFieldValue($user, $displayField);
+
+        $rolesCount = count($selectedRoleIds);
+        $permsCount = count($selectedPermissionIds);
+        AuditLogger::log('user_acl_updated', 'User', $userName, "Assigned {$rolesCount} roles and {$permsCount} direct permissions to {$userName}");
 
         return redirect()
             ->route('acl.users.edit', $id)

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Artisan;
 use SalvatoreCervone\RolePermissionManager\Models\Permission;
 use SalvatoreCervone\RolePermissionManager\Models\SecuredResource;
 use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+use SalvatoreCervone\RolePermissionManager\Services\AuditLogger;
 
 class SecuredResourceController extends Controller
 {
@@ -90,6 +91,8 @@ class SecuredResourceController extends Controller
 
         AclRegistry::refreshCache();
 
+        AuditLogger::log('resource_created', 'Resource', $resource->identifier, "Created custom resource '{$resource->identifier}'");
+
         return redirect()
             ->route('acl.resources.index')
             ->with('success', __('acl::resources.created_success', ['identifier' => $resource->identifier]));
@@ -138,6 +141,8 @@ class SecuredResourceController extends Controller
         $resource->permissions()->sync($validated['permissions'] ?? []);
         AclRegistry::refreshCache();
 
+        AuditLogger::log('resource_updated', 'Resource', $resource->identifier, "Updated custom resource '{$resource->identifier}'");
+
         return redirect()
             ->route('acl.resources.edit', $id)
             ->with('success', __('acl::resources.updated_success', ['identifier' => $resource->identifier]));
@@ -155,6 +160,8 @@ class SecuredResourceController extends Controller
         $resource->delete();
 
         AclRegistry::refreshCache();
+
+        AuditLogger::log('resource_deleted', 'Resource', $identifier, "Deleted custom resource '{$identifier}'");
 
         return redirect()
             ->route('acl.resources.index')
@@ -232,6 +239,8 @@ class SecuredResourceController extends Controller
 
         AclRegistry::refreshCache();
 
+        AuditLogger::log('resources_bulk_updated', 'Resource', "{$count} resources", "Bulk applied action '{$action}' to {$count} custom resources");
+
         return redirect()
             ->route('acl.resources.index')
             ->with('success', __('acl::routes.bulk_updated_success', ['count' => $count]));
@@ -244,6 +253,8 @@ class SecuredResourceController extends Controller
     {
         Artisan::call('acl:sync', ['--notify' => true]);
         $output = Artisan::output();
+
+        AuditLogger::log('routes_synced', 'RouteScanner', 'Sync Routes', 'Executed route synchronization from Web UI');
 
         return redirect()
             ->route('acl.routes.index')

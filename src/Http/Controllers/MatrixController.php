@@ -8,6 +8,7 @@ use Illuminate\Routing\Controller;
 use SalvatoreCervone\RolePermissionManager\Models\Permission;
 use SalvatoreCervone\RolePermissionManager\Models\Role;
 use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+use SalvatoreCervone\RolePermissionManager\Services\AuditLogger;
 
 class MatrixController extends Controller
 {
@@ -42,16 +43,28 @@ class MatrixController extends Controller
         ]);
 
         $role = Role::findOrFail($validated['role_id']);
-        $permissionId = $validated['permission_id'];
+        $permission = Permission::findOrFail($validated['permission_id']);
 
-        $isAttached = $role->permissions()->where('permission_id', $permissionId)->exists();
+        $isAttached = $role->permissions()->where('permission_id', $permission->id)->exists();
 
         if ($isAttached) {
-            $role->permissions()->detach($permissionId);
+            $role->permissions()->detach($permission->id);
             $action = 'detached';
+            AuditLogger::log(
+                'role_permission_detached',
+                'Role',
+                $role->name,
+                "Revoked permission '{$permission->name}' ({$permission->slug}) from role '{$role->name}' via Matrix"
+            );
         } else {
-            $role->permissions()->attach($permissionId);
+            $role->permissions()->attach($permission->id);
             $action = 'attached';
+            AuditLogger::log(
+                'role_permission_attached',
+                'Role',
+                $role->name,
+                "Granted permission '{$permission->name}' ({$permission->slug}) to role '{$role->name}' via Matrix"
+            );
         }
 
         AclRegistry::refreshCache();
@@ -60,7 +73,7 @@ class MatrixController extends Controller
             'success' => true,
             'action'  => $action,
             'role_id' => $role->id,
-            'perm_id' => $permissionId,
+            'perm_id' => $permission->id,
         ]);
     }
 }
