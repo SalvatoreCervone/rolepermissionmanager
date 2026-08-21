@@ -549,5 +549,66 @@ class AclRegistry
         $userId = method_exists($user, 'getKey') ? $user->getKey() : ($user->id ?? null);
         return $user->name ?? $user->email ?? ($userId ? "User #{$userId}" : 'User');
     }
+
+    /**
+     * Get all authenticatable user models configured for ACL management.
+     */
+    public static function getUserModelsConfig(): array
+    {
+        $configured = config('rolepermissionmanager.user_models', []);
+
+        if (!empty($configured) && is_array($configured)) {
+            $result = [];
+            foreach ($configured as $key => $conf) {
+                if (is_array($conf) && !empty($conf['model'])) {
+                    $result[$key] = [
+                        'key'               => $key,
+                        'label'             => $conf['label'] ?? ucfirst($key),
+                        'model'             => $conf['model'],
+                        'searchable_fields' => $conf['searchable_fields'] ?? config('rolepermissionmanager.users.searchable_fields', ['name', 'email']),
+                        'display_field'     => $conf['display_field'] ?? config('rolepermissionmanager.users.display_field', 'name'),
+                        'secondary_field'   => $conf['secondary_field'] ?? config('rolepermissionmanager.users.secondary_field', 'email'),
+                    ];
+                }
+            }
+            if (!empty($result)) {
+                return $result;
+            }
+        }
+
+        // Default single model configuration
+        $defaultModel = static::getUserModelClass();
+        return [
+            'users' => [
+                'key'               => 'users',
+                'label'             => 'Users',
+                'model'             => $defaultModel,
+                'searchable_fields' => config('rolepermissionmanager.users.searchable_fields', ['name', 'email']),
+                'display_field'     => config('rolepermissionmanager.users.display_field', 'name'),
+                'secondary_field'   => config('rolepermissionmanager.users.secondary_field', 'email'),
+            ],
+        ];
+    }
+
+    /**
+     * Get the active model configuration by key, with safe fallback.
+     */
+    public static function getUserModelConfig(?string $modelKey = null): array
+    {
+        $all = static::getUserModelsConfig();
+
+        if ($modelKey && isset($all[$modelKey])) {
+            return $all[$modelKey];
+        }
+
+        return reset($all) ?: [
+            'key'               => 'users',
+            'label'             => 'Users',
+            'model'             => static::getUserModelClass(),
+            'searchable_fields' => ['name', 'email'],
+            'display_field'     => 'name',
+            'secondary_field'   => 'email',
+        ];
+    }
 }
 

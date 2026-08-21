@@ -157,7 +157,34 @@ From the panel you can:
 - **⚡ Bulk Actions** (`/acl-admin/routes`): Select multiple routes to apply permissions or Super Admin flags in bulk.
 - **💾 Export & Import** (`/acl-admin/export-import`): Download JSON backups or import ACL settings from other environments.
 - **📜 Audit Logs** (`/acl-admin/audit-logs`): Review full historical tracking of authorization changes.
-- **👤 Users & Access** (`/acl-admin/users`): Assign roles and direct permissions to users.
+- **👤 Users & Access** (`/acl-admin/users`): Assign roles and direct permissions to users with multi-model polymorphic support.
+
+---
+
+### 4. 👥 Multi-Model / Polymorphic Support (Optional)
+
+If your application has multiple authenticatable models (e.g. `User`, `Admin`, `Staff`), configure `user_models` in `config/rolepermissionmanager.php`:
+
+```php
+'user_models' => [
+    'users' => [
+        'label'             => 'Users',
+        'model'             => App\Models\User::class,
+        'searchable_fields' => ['name', 'email'],
+        'display_field'     => ['name', 'cognome'],
+        'secondary_field'   => 'email',
+    ],
+    'admins' => [
+        'label'             => 'Administrators',
+        'model'             => App\Models\Admin::class,
+        'searchable_fields' => ['nome', 'cognome', 'email'],
+        'display_field'     => ['nome', 'cognome'],
+        'secondary_field'   => 'email',
+    ],
+],
+```
+
+The Web Admin Panel will automatically render model selector tabs on `/acl-admin/users` and within the Access Simulator!
 - **⚙️ Scanner Rules** (`/acl-admin/scanner-rules`): Manage route exclusions and auto-registration patterns.
 
 ---

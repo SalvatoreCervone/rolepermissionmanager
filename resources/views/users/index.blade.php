@@ -8,9 +8,25 @@
     </div>
 </div>
 
+@if(isset($allModels) && count($allModels) > 1)
+    <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+        @foreach($allModels as $mKey => $mConf)
+            <a href="{{ route('acl.users.index', ['model' => $mKey]) }}" 
+               class="btn {{ $modelKey === $mKey ? 'btn-primary' : 'btn-secondary' }}"
+               style="display: flex; align-items: center; gap: 8px; padding: 8px 18px; font-weight: 600;">
+                <span>👤</span> {{ $mConf['label'] }}
+            </a>
+        @endforeach
+    </div>
+@endif
+
 <div class="card" style="margin-bottom: 24px;">
     {{-- Autocomplete & Filter Bar --}}
     <form method="GET" action="{{ route('acl.users.index') }}" class="filter-bar" style="position: relative;">
+        @if(isset($modelKey))
+            <input type="hidden" name="model" value="{{ $modelKey }}">
+        @endif
+
         <div style="position: relative; flex: 1; max-width: 400px;">
             <input type="text"
                    id="user-search-input"
@@ -31,7 +47,7 @@
 
         <button type="submit" class="btn btn-secondary btn-sm">{{ __('acl::common.filter') }}</button>
         @if(request()->hasAny(['search', 'role']))
-            <a href="{{ route('acl.users.index') }}" class="btn btn-secondary btn-sm">{{ __('acl::common.clear') }}</a>
+            <a href="{{ route('acl.users.index', isset($modelKey) ? ['model' => $modelKey] : []) }}" class="btn btn-secondary btn-sm">{{ __('acl::common.clear') }}</a>
         @endif
     </form>
 </div>
@@ -83,7 +99,7 @@
                             @endif
                         </td>
                         <td class="actions">
-                            <a href="{{ route('acl.users.edit', $user->getKey()) }}" class="btn btn-secondary btn-sm">
+                            <a href="{{ route('acl.users.edit', ['id' => $user->getKey(), 'model' => $modelKey ?? 'users']) }}" class="btn btn-secondary btn-sm">
                                 ⚙️ {{ __('acl::users.manage_access') }}
                             </a>
                         </td>
@@ -116,7 +132,10 @@
             }
 
             debounceTimer = setTimeout(() => {
-                fetch(`{{ route('acl.users.search') }}?q=` + encodeURIComponent(query))
+                const modelParam = '{{ $modelKey ?? '' }}';
+                const url = `{{ route('acl.users.search') }}?q=` + encodeURIComponent(query) + (modelParam ? `&model=${encodeURIComponent(modelParam)}` : '');
+
+                fetch(url)
                     .then(res => res.json())
                     .then(data => {
                         if (!data || data.length === 0) {

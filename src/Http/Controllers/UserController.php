@@ -13,23 +13,6 @@ use SalvatoreCervone\RolePermissionManager\Services\AuditLogger;
 class UserController extends Controller
 {
     /**
-     * Get the authenticatable model class configured for the ACL system.
-     */
-    protected function getUserModelClass(): string
-    {
-        return AclRegistry::getUserModelClass();
-    }
-
-    /**
-     * Instantiate a new User query.
-     */
-    protected function newUserQuery()
-    {
-        $modelClass = $this->getUserModelClass();
-        return (new $modelClass)->newQuery();
-    }
-
-    /**
      * Format display values for single or multi-column configurations.
      *
      * @param  mixed  $user
@@ -49,10 +32,10 @@ class UserController extends Controller
                     $parts[] = $val;
                 }
             }
-            return !empty($parts) ? implode(' ', $parts) : "User #{$user->getKey()}";
+            return !empty($parts) ? implode(' ', $parts) : "ID #{$user->getKey()}";
         }
 
-        return (string) ($user->{$field} ?? "User #{$user->getKey()}");
+        return (string) ($user->{$field} ?? "ID #{$user->getKey()}");
     }
 
     /**
@@ -78,12 +61,17 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $searchableFields = config('rolepermissionmanager.users.searchable_fields', ['name', 'email']);
-        $displayField = config('rolepermissionmanager.users.display_field', 'name');
-        $secondaryField = config('rolepermissionmanager.users.secondary_field', 'email');
+        $allModels = AclRegistry::getUserModelsConfig();
+        $modelKey = $request->get('model', array_key_first($allModels));
+        $modelConfig = AclRegistry::getUserModelConfig($modelKey);
+
+        $modelClass = $modelConfig['model'];
+        $searchableFields = (array) ($modelConfig['searchable_fields'] ?? ['name', 'email']);
+        $displayField = $modelConfig['display_field'] ?? 'name';
+        $secondaryField = $modelConfig['secondary_field'] ?? 'email';
         $perPage = config('rolepermissionmanager.users.per_page', 25);
 
-        $query = $this->newUserQuery()->with(['roles', 'permissions']);
+        $query = (new $modelClass)->newQuery()->with(['roles', 'permissions']);
 
         if ($request->filled('search')) {
             $search = $request->get('search');
@@ -113,7 +101,10 @@ class UserController extends Controller
             'roles',
             'displayField',
             'secondaryField',
-            'searchableFields'
+            'searchableFields',
+            'allModels',
+            'modelKey',
+            'modelConfig'
         ));
     }
 
@@ -127,11 +118,15 @@ class UserController extends Controller
             return response()->json([]);
         }
 
-        $searchableFields = config('rolepermissionmanager.users.searchable_fields', ['name', 'email']);
-        $displayField = config('rolepermissionmanager.users.display_field', 'name');
-        $secondaryField = config('rolepermissionmanager.users.secondary_field', 'email');
+        $modelKey = $request->get('model');
+        $modelConfig = AclRegistry::getUserModelConfig($modelKey);
 
-        $query = $this->newUserQuery()->with('roles');
+        $modelClass = $modelConfig['model'];
+        $searchableFields = (array) ($modelConfig['searchable_fields'] ?? ['name', 'email']);
+        $displayField = $modelConfig['display_field'] ?? 'name';
+        $secondaryField = $modelConfig['secondary_field'] ?? 'email';
+
+        $query = (new $modelClass)->newQuery()->with('roles');
 
         $query->where(function ($q) use ($queryText, $searchableFields) {
             foreach ($searchableFields as $index => $field) {
@@ -143,13 +138,13 @@ class UserController extends Controller
             }
         });
 
-        $results = $query->limit(10)->get()->map(function ($user) use ($displayField, $secondaryField) {
+        $results = $query->limit(10)->get()->map(function ($user) use ($displayField, $secondaryField, $modelConfig) {
             return [
                 'id'        => $user->getKey(),
                 'label'     => static::formatFieldValue($user, $displayField),
                 'sublabel'  => static::formatFieldValue($user, $secondaryField),
                 'roles'     => $user->roles->pluck('name')->all(),
-                'edit_url'  => route('acl.users.edit', $user->getKey()),
+                'edit_url'  => route('acl.users.edit', ['id' => $user->getKey(), 'model' => $modelConfig['key']]),
             ];
         });
 
@@ -159,22 +154,28 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified user's roles and permissions.
      */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
-        $user = $this->newUserQuery()->with(['roles', 'permissions'])->findOrFail($id);
+        $modelKey = $request->get('model');
+        $modelConfig = AclRegistry::getUserModelConfig($modelKey);
+        $modelClass = $modelConfig['model'];
+
+        $user = (new $modelClass)->newQuery()->with(['roles', 'permissions'])->findOrFail($id);
 
         $allRoles = Role::orderBy('name')->get();
         $allPermissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
 
-        $displayField = config('rolepermissionmanager.users.display_field', 'name');
-        $secondaryField = config('rolepermissionmanager.users.secondary_field', 'email');
+        $displayField = $modelConfig['display_field'] ?? 'name';
+        $secondaryField = $modelConfig['secondary_field'] ?? 'email';
 
         return view('acl::users.edit', compact(
             'user',
             'allRoles',
             'allPermissions',
             'displayField',
-            'secondaryField'
+            'secondaryField',
+            'modelKey',
+            'modelConfig'
         ));
     }
 
@@ -183,7 +184,11 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = $this->newUserQuery()->findOrFail($id);
+        $modelKey = $request->get('model');
+        $modelConfig = AclRegistry::getUserModelConfig($modelKey);
+        $modelClass = $modelConfig['model'];
+
+        $user = (new $modelClass)->newQuery()->findOrFail($id);
 
         $rolesTable = config('rolepermissionmanager.tables.roles', 'acl_roles');
         $permissionsTable = config('rolepermissionmanager.tables.permissions', 'acl_permissions');
@@ -208,15 +213,21 @@ class UserController extends Controller
         // Invalidate cached permissions for this user
         AclRegistry::flushUserCache($user->getKey());
 
-        $displayField = config('rolepermissionmanager.users.display_field', 'name');
+        $displayField = $modelConfig['display_field'] ?? 'name';
         $userName = static::formatFieldValue($user, $displayField);
 
         $rolesCount = count($selectedRoleIds);
         $permsCount = count($selectedPermissionIds);
-        AuditLogger::log('user_acl_updated', 'User', $userName, "Assigned {$rolesCount} roles and {$permsCount} direct permissions to {$userName}");
+        AuditLogger::log('user_acl_updated', $modelConfig['label'] ?? 'User', $userName, "Assigned {$rolesCount} roles and {$permsCount} direct permissions to {$userName}");
+
+        $redirectParams = ['id' => $id];
+        $allModels = AclRegistry::getUserModelsConfig();
+        if (count($allModels) > 1 && $modelKey) {
+            $redirectParams['model'] = $modelConfig['key'];
+        }
 
         return redirect()
-            ->route('acl.users.edit', $id)
+            ->route('acl.users.edit', $redirectParams)
             ->with('success', __('acl::users.updated_success', ['name' => $userName]));
     }
 }

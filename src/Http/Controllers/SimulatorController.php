@@ -22,9 +22,13 @@ class SimulatorController extends Controller
      */
     public function index(Request $request)
     {
-        $userModel = $this->getUserModelClass();
-        $displayField = config('rolepermissionmanager.users.display_field', 'name');
-        $secondaryField = config('rolepermissionmanager.users.secondary_field', 'email');
+        $allModels = AclRegistry::getUserModelsConfig();
+        $modelKey = $request->get('model', array_key_first($allModels));
+        $modelConfig = AclRegistry::getUserModelConfig($modelKey);
+
+        $userModel = $modelConfig['model'];
+        $displayField = $modelConfig['display_field'] ?? 'name';
+        $secondaryField = $modelConfig['secondary_field'] ?? 'email';
 
         $users = (new $userModel)->newQuery()->orderBy('id')->limit(50)->get();
         $resources = SecuredResource::active()->orderBy('identifier')->get();
@@ -50,7 +54,10 @@ class SimulatorController extends Controller
             'selectedIdentifier',
             'evaluation',
             'displayField',
-            'secondaryField'
+            'secondaryField',
+            'allModels',
+            'modelKey',
+            'modelConfig'
         ));
     }
 

@@ -11,7 +11,20 @@
 {{-- Tester Input Form --}}
 <div class="card" style="margin-bottom: 24px;">
     <form method="GET" action="{{ route('acl.simulator.index') }}">
-        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: flex-end;">
+        <div style="display: grid; grid-template-columns: {{ (isset($allModels) && count($allModels) > 1) ? '180px 1fr 1fr auto' : '1fr 1fr auto' }}; gap: 16px; align-items: flex-end;">
+            @if(isset($allModels) && count($allModels) > 1)
+            <div>
+                <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">👥 {{ __('acl::users.title') }} Type</label>
+                <select name="model" class="form-control" onchange="this.form.submit()" style="width: 100%;">
+                    @foreach($allModels as $mKey => $mConf)
+                        <option value="{{ $mKey }}" {{ ($modelKey ?? '') === $mKey ? 'selected' : '' }}>
+                            {{ $mConf['label'] }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+
             <div>
                 <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">👤 {{ __('acl::simulator.select_user') }}</label>
                 <select name="user_id" class="form-control" required style="width: 100%;">

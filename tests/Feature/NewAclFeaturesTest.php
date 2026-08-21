@@ -162,4 +162,30 @@ class NewAclFeaturesTest extends TestCase
         $clearResp->assertRedirect('/acl-admin/audit-logs');
         $this->assertDatabaseCount('acl_audit_logs', 0);
     }
+
+    public function test_multi_model_user_management_in_admin_panel(): void
+    {
+        config([
+            'rolepermissionmanager.user_models' => [
+                'users' => [
+                    'label'         => 'Normal Users',
+                    'model'         => User::class,
+                    'display_field' => 'name',
+                    'secondary_field' => 'email',
+                ],
+                'staff' => [
+                    'label'         => 'Staff Members',
+                    'model'         => User::class,
+                    'display_field' => 'name',
+                    'secondary_field' => 'email',
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/acl-admin/users?model=staff');
+        $response->assertStatus(200);
+        $response->assertSee('Staff Members');
+        $response->assertSee('Normal Users');
+    }
 }
+

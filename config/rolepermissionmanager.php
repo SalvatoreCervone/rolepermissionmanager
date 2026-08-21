@@ -52,10 +52,43 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | User Model & Autocomplete Search Configuration
+    | Authenticatable User Models (Polymorphic Multi-Model Support)
     |--------------------------------------------------------------------------
     |
-    | Configuration for managing users and ACL assignment in the admin panel.
+    | Define one or more authenticatable models to manage in the admin panel.
+    | When multiple models are configured, the admin panel automatically
+    | renders model tabs allowing you to assign roles and permissions to each.
+    |
+    | Example multi-model setup:
+    |
+    | 'user_models' => [
+    |     'users' => [
+    |         'label'             => 'Users',
+    |         'model'             => App\Models\User::class,
+    |         'searchable_fields' => ['name', 'email'],
+    |         'display_field'     => ['name', 'cognome'],
+    |         'secondary_field'   => 'email',
+    |     ],
+    |     'admins' => [
+    |         'label'             => 'Administrators',
+    |         'model'             => App\Models\Admin::class,
+    |         'searchable_fields' => ['nome', 'cognome', 'email'],
+    |         'display_field'     => ['nome', 'cognome'],
+    |         'secondary_field'   => 'email',
+    |     ],
+    | ],
+    |
+    | If left empty, the package uses the default single-model 'users' settings below.
+    |
+    */
+    'user_models' => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | User Model & Autocomplete Search Configuration (Default / Fallback)
+    |--------------------------------------------------------------------------
+    |
+    | Default configuration for managing users when 'user_models' is empty.
     |
     | - table: The database table name for users (default: 'users').
     | - searchable_fields: Array of column names to search when using autocomplete/filters.

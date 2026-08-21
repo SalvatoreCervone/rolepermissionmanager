@@ -8,11 +8,15 @@
 <div class="page-header">
     <div>
         <h2>{{ __('acl::users.edit_access_title', ['name' => $userName]) }}</h2>
-        <div class="breadcrumb"><a href="{{ route('acl.users.index') }}" style="color: var(--accent); text-decoration: none;">{{ __('acl::users.title') }}</a> / {{ __('acl::common.edit') }}</div>
+        <div class="breadcrumb">
+            <a href="{{ route('acl.users.index', isset($modelKey) ? ['model' => $modelKey] : []) }}" style="color: var(--accent); text-decoration: none;">
+                {{ $modelConfig['label'] ?? __('acl::users.title') }}
+            </a> / {{ __('acl::common.edit') }}
+        </div>
     </div>
 </div>
 
-<form action="{{ route('acl.users.update', $user->id) }}" method="POST">
+<form action="{{ route('acl.users.update', ['id' => $user->getKey(), 'model' => $modelKey ?? 'users']) }}" method="POST">
     @csrf @method('PUT')
 
     {{-- User Summary Card --}}
@@ -81,7 +85,7 @@
 
     <div style="display: flex; gap: 12px;">
         <button type="submit" class="btn btn-primary">{{ __('acl::users.save_access') }}</button>
-        <a href="{{ route('acl.users.index') }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
+        <a href="{{ route('acl.users.index', isset($modelKey) ? ['model' => $modelKey] : []) }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
     </div>
 </form>
 @endsection
