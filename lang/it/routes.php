@@ -11,6 +11,7 @@ return [
     'method'                       => 'Metodo HTTP',
     'all_methods'                  => 'Tutti i Metodi',
     'all_status'                   => 'Tutti gli Stati',
+    'all_files'                    => 'Tutti i File',
     'all_permissions'              => 'Tutti i Permessi',
     'no_permissions_assigned'       => 'Senza Permessi',
     'has_permissions_assigned'      => 'Con Permessi',

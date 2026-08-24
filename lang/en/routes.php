@@ -11,6 +11,7 @@ return [
     'method'                       => 'HTTP Method',
     'all_methods'                  => 'All Methods',
     'all_status'                   => 'All Statuses',
+    'all_files'                    => 'All Route Files',
     'all_permissions'              => 'All Permissions',
     'no_permissions_assigned'       => 'No Permissions',
     'has_permissions_assigned'      => 'With Permissions',

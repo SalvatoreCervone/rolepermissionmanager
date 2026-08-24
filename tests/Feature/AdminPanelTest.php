@@ -175,6 +175,36 @@ class AdminPanelTest extends TestCase
         $respSpecific->assertDontSee('orders.orphan_route');
     }
 
+    public function test_routes_index_can_filter_by_file(): void
+    {
+        SecuredResource::create([
+            'identifier'        => 'orders.api_route',
+            'type'              => SecuredResource::TYPE_ROUTE,
+            'controller_action' => 'OrderController@index',
+            'source_file'       => 'routes/api.php',
+            'method'            => 'GET',
+            'uri'               => 'api/orders',
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+
+        SecuredResource::create([
+            'identifier'        => 'orders.web_route',
+            'type'              => SecuredResource::TYPE_ROUTE,
+            'controller_action' => 'OrderController@web',
+            'source_file'       => 'routes/web.php',
+            'method'            => 'GET',
+            'uri'               => 'orders',
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+
+        $resp = $this->get('/acl-admin/routes?file=routes/api.php');
+        $resp->assertStatus(200);
+        $resp->assertSee('orders.api_route');
+        $resp->assertDontSee('orders.web_route');
+    }
+
     public function test_can_update_route_configuration(): void
     {
         $resource = SecuredResource::create([

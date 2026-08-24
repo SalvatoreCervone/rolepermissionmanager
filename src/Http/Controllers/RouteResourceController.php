@@ -35,6 +35,11 @@ class RouteResourceController extends Controller
                 $allSkipped = $allSkipped->where('method', $method);
             }
 
+            if ($request->filled('file')) {
+                $file = $request->get('file');
+                $allSkipped = $allSkipped->where('source_file', $file);
+            }
+
             if ($request->filled('search')) {
                 $search = strtolower($request->get('search'));
                 $allSkipped = $allSkipped->filter(function ($item) use ($search) {
@@ -59,9 +64,10 @@ class RouteResourceController extends Controller
             );
 
             $methods = $scanner->getSkippedRoutes()->pluck('method')->unique()->sort();
+            $routeFiles = $scanner->getSkippedRoutes()->pluck('source_file')->filter()->unique()->sort();
             $isSkipped = true;
 
-            return view('acl::routes.index', compact('routes', 'methods', 'isSkipped'));
+            return view('acl::routes.index', compact('routes', 'methods', 'routeFiles', 'isSkipped'));
         }
 
         $query = SecuredResource::routes()->with('permissions')->orderBy('identifier');
@@ -69,6 +75,9 @@ class RouteResourceController extends Controller
         // Filters
         if ($request->filled('method')) {
             $query->where('method', $request->get('method'));
+        }
+        if ($request->filled('file')) {
+            $query->where('source_file', $request->get('file'));
         }
         if ($request->filled('status')) {
             match ($request->get('status')) {
@@ -104,10 +113,11 @@ class RouteResourceController extends Controller
 
         $routes = $query->paginate($perPage)->appends($request->query());
         $methods = SecuredResource::routes()->whereNotNull('method')->distinct()->pluck('method')->sort();
+        $routeFiles = SecuredResource::routes()->whereNotNull('source_file')->distinct()->pluck('source_file')->sort();
         $allPermissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
         $isSkipped = false;
 
-        return view('acl::routes.index', compact('routes', 'methods', 'allPermissions', 'isSkipped'));
+        return view('acl::routes.index', compact('routes', 'methods', 'routeFiles', 'allPermissions', 'isSkipped'));
     }
 
     /**

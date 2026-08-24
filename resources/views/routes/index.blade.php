@@ -109,6 +109,14 @@
             <option value="deprecated" {{ request('status') === 'deprecated' ? 'selected' : '' }}>📦 {{ __('acl::routes.deprecated') }}</option>
             <option value="skipped" {{ request('status') === 'skipped' ? 'selected' : '' }}>⏭️ {{ __('acl::routes.skipped') }}</option>
         </select>
+        @if(isset($routeFiles) && $routeFiles->isNotEmpty())
+            <select name="file" class="form-control" onchange="this.form.submit()">
+                <option value="">{{ __('acl::routes.all_files') }}</option>
+                @foreach($routeFiles as $rf)
+                    <option value="{{ $rf }}" {{ request('file') === $rf ? 'selected' : '' }}>📄 {{ $rf }}</option>
+                @endforeach
+            </select>
+        @endif
         <select name="permission" class="form-control" onchange="this.form.submit()">
             <option value="">{{ __('acl::routes.all_permissions') }}</option>
             <option value="none" {{ request('permission') === 'none' ? 'selected' : '' }}>⚠️ {{ __('acl::routes.no_permissions_assigned') }}</option>
@@ -126,7 +134,7 @@
             @endif
         </select>
         <button type="submit" class="btn btn-secondary btn-sm">{{ __('acl::common.filter') }}</button>
-        @if(request()->hasAny(['search', 'method', 'status', 'permission']))
+        @if(request()->hasAny(['search', 'method', 'status', 'file', 'permission']))
             <a href="{{ route('acl.routes.index') }}" class="btn btn-secondary btn-sm">{{ __('acl::common.clear') }}</a>
         @endif
     </form>
@@ -150,7 +158,7 @@
                 <tbody>
                     @foreach($routes as $route)
                     <tr>
-                        <td style="vertical-align: top;">
+                        <td style="vertical-align: top; padding: 12px 16px;">
                             {{-- Line 1: Method badge + Identifier + Skipped badge --}}
                             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -164,7 +172,7 @@
                             <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap;">
                                 <div style="display: flex; align-items: center; gap: 5px;">
                                     <span>🌐</span>
-                                    <code>/{{ ltrim($route->uri, '/') }}</code>
+                                    <code style="color: var(--text-primary);">/{{ ltrim($route->uri, '/') }}</code>
                                 </div>
 
                                 @if($route->controller_action && $route->controller_action !== '—')
@@ -178,9 +186,8 @@
 
                                 @if(isset($route->source_file) && $route->source_file)
                                     <div style="display: flex; align-items: center; gap: 5px;" title="{{ __('acl::routes.source_file') }}: {{ $route->source_file }}">
-                                        <span>📄</span>
-                                        <span class="badge" style="background: var(--bg-primary); border: 1px solid var(--border); color: var(--info); font-size: 11px; font-family: monospace;">
-                                            {{ $route->source_file }}
+                                        <span class="badge" style="background: rgba(116, 185, 255, 0.1); border: 1px solid rgba(116, 185, 255, 0.25); color: #74b9ff; font-size: 11px; font-family: monospace;">
+                                            📄 {{ $route->source_file }}
                                         </span>
                                     </div>
                                 @endif
@@ -209,7 +216,7 @@
                         <th style="width: 40px; text-align: center;">
                             <input type="checkbox" id="selectAllRoutes" title="{{ __('acl::common.select_all') }}">
                         </th>
-                        <th style="min-width: 320px;">{{ __('acl::routes.route_info') }}</th>
+                        <th style="min-width: 340px;">{{ __('acl::routes.route_info') }}</th>
                         <th style="min-width: 220px;">{{ __('acl::roles.permissions') }}</th>
                         <th style="width: 110px; text-align: right;">{{ __('acl::common.actions') }}</th>
                     </tr>
@@ -217,15 +224,15 @@
                 <tbody>
                     @foreach($routes as $route)
                     <tr style="{{ $route->is_deprecated ? 'opacity: 0.5;' : '' }}">
-                        <td style="text-align: center; vertical-align: top; padding-top: 16px;">
+                        <td style="text-align: center; vertical-align: top; padding-top: 14px;">
                             <input type="checkbox" class="route-select-cb" value="{{ $route->id }}" data-identifier="{{ $route->identifier }}">
                         </td>
-                        <td style="vertical-align: top;">
+                        <td style="vertical-align: top; padding: 12px 16px;">
                             {{-- Line 1: Method badge + Identifier (bold) + Status & Operator badges --}}
                             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
                                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                     <span class="badge badge-{{ strtolower($route->method ?? 'get') }}">{{ $route->method }}</span>
-                                    <strong style="font-size: 14px; color: var(--text-primary); font-family: 'JetBrains Mono', 'Fira Code', monospace;">{{ $route->identifier }}</strong>
+                                    <strong style="font-size: 14px; color: var(--text-primary); font-family: 'JetBrains Mono', 'Fira Code', monospace; letter-spacing: -0.2px;">{{ $route->identifier }}</strong>
                                 </div>
 
                                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -247,7 +254,7 @@
                                 {{-- URI --}}
                                 <div style="display: flex; align-items: center; gap: 5px;">
                                     <span>🌐</span>
-                                    <code>/{{ ltrim($route->uri, '/') }}</code>
+                                    <code style="color: var(--text-primary);">/{{ ltrim($route->uri, '/') }}</code>
                                 </div>
 
                                 {{-- Controller Action --}}
@@ -263,9 +270,8 @@
                                 {{-- Route Source File Badge --}}
                                 @if($route->source_file)
                                     <div style="display: flex; align-items: center; gap: 5px;" title="{{ __('acl::routes.source_file') }}: {{ $route->source_file }}">
-                                        <span>📄</span>
-                                        <span class="badge" style="background: var(--bg-primary); border: 1px solid var(--border); color: var(--info); font-size: 11px; font-family: monospace;">
-                                            {{ $route->source_file }}
+                                        <span class="badge" style="background: rgba(116, 185, 255, 0.1); border: 1px solid rgba(116, 185, 255, 0.25); color: #74b9ff; font-size: 11px; font-family: monospace;">
+                                            📄 {{ $route->source_file }}
                                         </span>
                                     </div>
                                 @endif
@@ -277,7 +283,9 @@
                                 @forelse($route->permissions as $perm)
                                     <span class="chip">{{ $perm->slug }}</span>
                                 @empty
-                                    <span style="color: var(--warning); font-size: 12px;">⚠️ {{ __('acl::routes.no_permissions') }}</span>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25); color: #eab308; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 500;">
+                                        ⚠️ {{ __('acl::routes.no_permissions') }}
+                                    </span>
                                 @endforelse
                             </div>
                         </td>
