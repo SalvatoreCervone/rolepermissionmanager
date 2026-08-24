@@ -107,6 +107,7 @@ class AdminPanelTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('orders.export');
         $response->assertSee('POST');
+        $response->assertSee('OrderController@export');
     }
 
     public function test_routes_index_can_filter_by_skipped_status(): void

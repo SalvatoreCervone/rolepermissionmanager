@@ -169,6 +169,7 @@
                         <th>{{ __('acl::routes.method') }}</th>
                         <th>{{ __('acl::routes.identifier') }}</th>
                         <th>{{ __('acl::routes.uri') }}</th>
+                        <th>{{ __('acl::routes.controller_action') }}</th>
                         <th>{{ __('acl::routes.status') }}</th>
                         <th>{{ __('acl::routes.operator') }}</th>
                         <th>{{ __('acl::roles.permissions') }}</th>
@@ -184,6 +185,13 @@
                         <td><span class="badge badge-{{ strtolower($route->method ?? 'get') }}">{{ $route->method }}</span></td>
                         <td><code>{{ $route->identifier }}</code></td>
                         <td><code>{{ $route->uri }}</code></td>
+                        <td>
+                            @if($route->controller_action)
+                                <code style="font-size: 12px;">{{ $route->controller_action }}</code>
+                            @else
+                                <span style="color: var(--text-muted);">—</span>
+                            @endif
+                        </td>
                         <td>
                             @if($route->is_deprecated)
                                 <span class="badge badge-deprecated">{{ __('acl::routes.deprecated') }}</span>

@@ -4,10 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager'))</title>
+    <script>
+        if (localStorage.getItem('acl_sidebar_collapsed') === 'true') {
+            document.documentElement.classList.add('sidebar-collapsed');
+        }
+    </script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 68px;
             --bg-primary: #0f111a;
             --bg-secondary: #1a1d2e;
             --bg-card: #1e2235;
@@ -46,7 +53,7 @@
 
         /* Sidebar */
         .sidebar {
-            width: 260px;
+            width: var(--sidebar-width);
             background: var(--bg-secondary);
             border-right: 1px solid var(--border);
             padding: 0;
@@ -55,28 +62,88 @@
             left: 0;
             height: 100vh;
             overflow-y: auto;
+            overflow-x: hidden;
             z-index: 100;
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
         }
         .sidebar-header {
-            padding: 24px 20px;
+            padding: 20px 16px;
             border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-height: 73px;
+        }
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .sidebar-brand .brand-icon {
+            font-size: 22px;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+        .sidebar-brand .brand-text {
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .sidebar-header h1 {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             background: linear-gradient(135deg, var(--accent), var(--info));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .sidebar-header .subtitle {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            margin-top: 4px;
+            margin-top: 2px;
+            white-space: nowrap;
         }
-        .sidebar-nav { padding: 16px 12px; }
+        .sidebar-toggle-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            flex-shrink: 0;
+            padding: 0;
+        }
+        .sidebar-toggle-btn:hover {
+            background: var(--accent-subtle);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .sidebar-toggle-btn svg {
+            transition: transform 0.25s ease;
+        }
+        .sidebar-nav {
+            padding: 16px 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
         .sidebar-nav .nav-section {
             font-size: 10px;
             text-transform: uppercase;
@@ -84,11 +151,13 @@
             color: var(--text-muted);
             padding: 16px 12px 8px;
             font-weight: 600;
+            white-space: nowrap;
+            transition: opacity 0.2s ease, margin 0.2s ease;
         }
         .sidebar-nav a {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             padding: 10px 14px;
             color: var(--text-secondary);
             text-decoration: none;
@@ -96,6 +165,8 @@
             font-size: 14px;
             font-weight: 500;
             transition: all var(--transition);
+            white-space: nowrap;
+            position: relative;
         }
         .sidebar-nav a:hover {
             background: var(--accent-subtle);
@@ -106,10 +177,97 @@
             color: var(--accent);
             font-weight: 600;
         }
-        .sidebar-nav a .icon { font-size: 18px; width: 24px; text-align: center; }
+        .sidebar-nav a .icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .sidebar-nav a .nav-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: opacity 0.2s ease;
+        }
+        .sidebar-nav .sync-form {
+            margin-top: 8px;
+            padding: 0;
+        }
+        .sidebar-nav .sync-form button {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
 
         /* Main content */
-        .main { flex: 1; margin-left: 260px; padding: 32px; }
+        .main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 32px;
+            transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 0;
+        }
+
+        /* Collapsed Sidebar Styles */
+        html.sidebar-collapsed .sidebar {
+            width: var(--sidebar-collapsed-width);
+        }
+        html.sidebar-collapsed .sidebar-header {
+            padding: 16px 8px;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+        }
+        html.sidebar-collapsed .sidebar-brand {
+            justify-content: center;
+        }
+        html.sidebar-collapsed .sidebar-brand .brand-text {
+            display: none;
+        }
+        html.sidebar-collapsed .sidebar-brand .brand-icon {
+            font-size: 24px;
+        }
+        html.sidebar-collapsed .sidebar-toggle-btn svg {
+            transform: rotate(180deg);
+        }
+        html.sidebar-collapsed .sidebar-nav {
+            padding: 12px 8px;
+        }
+        html.sidebar-collapsed .sidebar-nav .nav-section {
+            height: 1px;
+            padding: 0;
+            margin: 12px 6px;
+            background: var(--border);
+            overflow: hidden;
+            font-size: 0;
+            text-indent: -9999px;
+        }
+        html.sidebar-collapsed .sidebar-nav a {
+            padding: 10px 0;
+            justify-content: center;
+            gap: 0;
+        }
+        html.sidebar-collapsed .sidebar-nav a .nav-text {
+            display: none;
+        }
+        html.sidebar-collapsed .sidebar-nav .sync-form {
+            padding: 0;
+        }
+        html.sidebar-collapsed .sidebar-nav .sync-form button {
+            width: 44px;
+            height: 36px;
+            margin: 0 auto;
+            padding: 0;
+            font-size: 16px;
+        }
+        html.sidebar-collapsed .sidebar-nav .sync-form .sync-text {
+            display: none;
+        }
+        html.sidebar-collapsed .main {
+            margin-left: var(--sidebar-collapsed-width);
+        }
 
         /* Page header */
         .page-header {
@@ -503,56 +661,78 @@
 <body>
 <div class="layout">
     {{-- Sidebar --}}
-    <aside class="sidebar">
+    <aside class="sidebar" id="appSidebar">
         <div class="sidebar-header">
-            <h1>🛡️ {{ config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager') }}</h1>
-            <div class="subtitle">Role & Permission Manager</div>
+            <a href="{{ route('acl.dashboard') }}" class="sidebar-brand">
+                <span class="brand-icon">🛡️</span>
+                <div class="brand-text">
+                    <h1>{{ config('rolepermissionmanager.admin_panel.page_title', 'ACL Manager') }}</h1>
+                    <div class="subtitle">Role & Permission Manager</div>
+                </div>
+            </a>
+            <button type="button" id="sidebarToggle" class="sidebar-toggle-btn" title="Comprimi / Espandi menu" aria-label="Toggle Sidebar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
         </div>
         <nav class="sidebar-nav">
             <div class="nav-section">{{ __('acl::nav.overview') }}</div>
-            <a href="{{ route('acl.dashboard') }}" class="{{ request()->routeIs('acl.dashboard') ? 'active' : '' }}">
-                <span class="icon">📊</span> {{ __('acl::nav.dashboard') }}
+            <a href="{{ route('acl.dashboard') }}" class="{{ request()->routeIs('acl.dashboard') ? 'active' : '' }}" title="{{ __('acl::nav.dashboard') }}">
+                <span class="icon">📊</span>
+                <span class="nav-text">{{ __('acl::nav.dashboard') }}</span>
             </a>
 
             <div class="nav-section">{{ __('acl::nav.manage') }}</div>
-            <a href="{{ route('acl.users.index') }}" class="{{ request()->routeIs('acl.users.*') ? 'active' : '' }}">
-                <span class="icon">👤</span> {{ __('acl::nav.users') }}
+            <a href="{{ route('acl.users.index') }}" class="{{ request()->routeIs('acl.users.*') ? 'active' : '' }}" title="{{ __('acl::nav.users') }}">
+                <span class="icon">👤</span>
+                <span class="nav-text">{{ __('acl::nav.users') }}</span>
             </a>
-            <a href="{{ route('acl.roles.index') }}" class="{{ request()->routeIs('acl.roles.*') ? 'active' : '' }}">
-                <span class="icon">👥</span> {{ __('acl::nav.roles') }}
+            <a href="{{ route('acl.roles.index') }}" class="{{ request()->routeIs('acl.roles.*') ? 'active' : '' }}" title="{{ __('acl::nav.roles') }}">
+                <span class="icon">👥</span>
+                <span class="nav-text">{{ __('acl::nav.roles') }}</span>
             </a>
-            <a href="{{ route('acl.permissions.index') }}" class="{{ request()->routeIs('acl.permissions.*') ? 'active' : '' }}">
-                <span class="icon">🔑</span> {{ __('acl::nav.permissions') }}
+            <a href="{{ route('acl.permissions.index') }}" class="{{ request()->routeIs('acl.permissions.*') ? 'active' : '' }}" title="{{ __('acl::nav.permissions') }}">
+                <span class="icon">🔑</span>
+                <span class="nav-text">{{ __('acl::nav.permissions') }}</span>
             </a>
-            <a href="{{ route('acl.matrix.index') }}" class="{{ request()->routeIs('acl.matrix.*') ? 'active' : '' }}">
-                <span class="icon">🔲</span> {{ __('acl::nav.matrix') }}
+            <a href="{{ route('acl.matrix.index') }}" class="{{ request()->routeIs('acl.matrix.*') ? 'active' : '' }}" title="{{ __('acl::nav.matrix') }}">
+                <span class="icon">🔲</span>
+                <span class="nav-text">{{ __('acl::nav.matrix') }}</span>
             </a>
-            <a href="{{ route('acl.routes.index') }}" class="{{ request()->routeIs('acl.routes.*') ? 'active' : '' }}">
-                <span class="icon">🛤️</span> {{ __('acl::nav.routes') }}
+            <a href="{{ route('acl.routes.index') }}" class="{{ request()->routeIs('acl.routes.*') ? 'active' : '' }}" title="{{ __('acl::nav.routes') }}">
+                <span class="icon">🛤️</span>
+                <span class="nav-text">{{ __('acl::nav.routes') }}</span>
             </a>
-            <a href="{{ route('acl.resources.index') }}" class="{{ request()->routeIs('acl.resources.*') ? 'active' : '' }}">
-                <span class="icon">📦</span> {{ __('acl::nav.resources') }}
+            <a href="{{ route('acl.resources.index') }}" class="{{ request()->routeIs('acl.resources.*') ? 'active' : '' }}" title="{{ __('acl::nav.resources') }}">
+                <span class="icon">📦</span>
+                <span class="nav-text">{{ __('acl::nav.resources') }}</span>
             </a>
 
             <div class="nav-section">{{ __('acl::nav.tools') }}</div>
-            <a href="{{ route('acl.simulator.index') }}" class="{{ request()->routeIs('acl.simulator.*') ? 'active' : '' }}">
-                <span class="icon">🔍</span> {{ __('acl::nav.simulator') }}
+            <a href="{{ route('acl.simulator.index') }}" class="{{ request()->routeIs('acl.simulator.*') ? 'active' : '' }}" title="{{ __('acl::nav.simulator') }}">
+                <span class="icon">🔍</span>
+                <span class="nav-text">{{ __('acl::nav.simulator') }}</span>
             </a>
-            <a href="{{ route('acl.scanner_rules.index') }}" class="{{ request()->routeIs('acl.scanner_rules.*') ? 'active' : '' }}">
-                <span class="icon">⚙️</span> {{ __('acl::nav.scanner_rules') }}
+            <a href="{{ route('acl.scanner_rules.index') }}" class="{{ request()->routeIs('acl.scanner_rules.*') ? 'active' : '' }}" title="{{ __('acl::nav.scanner_rules') }}">
+                <span class="icon">⚙️</span>
+                <span class="nav-text">{{ __('acl::nav.scanner_rules') }}</span>
             </a>
-            <a href="{{ route('acl.export_import.index') }}" class="{{ request()->routeIs('acl.export_import.*') ? 'active' : '' }}">
-                <span class="icon">💾</span> {{ __('acl::nav.export_import') }}
+            <a href="{{ route('acl.export_import.index') }}" class="{{ request()->routeIs('acl.export_import.*') ? 'active' : '' }}" title="{{ __('acl::nav.export_import') }}">
+                <span class="icon">💾</span>
+                <span class="nav-text">{{ __('acl::nav.export_import') }}</span>
             </a>
-            <a href="{{ route('acl.audit_logs.index') }}" class="{{ request()->routeIs('acl.audit_logs.*') ? 'active' : '' }}">
-                <span class="icon">📜</span> {{ __('acl::nav.audit_logs') }}
+            <a href="{{ route('acl.audit_logs.index') }}" class="{{ request()->routeIs('acl.audit_logs.*') ? 'active' : '' }}" title="{{ __('acl::nav.audit_logs') }}">
+                <span class="icon">📜</span>
+                <span class="nav-text">{{ __('acl::nav.audit_logs') }}</span>
             </a>
 
             <div class="nav-section">{{ __('acl::nav.actions') }}</div>
-            <form action="{{ route('acl.routes.sync') }}" method="POST" style="padding: 0 0;">
+            <form action="{{ route('acl.routes.sync') }}" method="POST" class="sync-form">
                 @csrf
-                <button type="submit" class="btn btn-success btn-sm" style="width: calc(100% - 24px); margin: 0 12px;">
-                    🔄 {{ __('acl::nav.sync_routes') }}
+                <button type="submit" class="btn btn-success btn-sm" title="{{ __('acl::nav.sync_routes') }}">
+                    <span class="sync-icon">🔄</span>
+                    <span class="sync-text">{{ __('acl::nav.sync_routes') }}</span>
                 </button>
             </form>
         </nav>
@@ -589,6 +769,15 @@
 </div>
 
 <script>
+    // Sidebar toggle behavior with persistent state
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            const isCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('acl_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+        });
+    }
+
     // Toggle switch behavior
     document.querySelectorAll('.toggle').forEach(toggle => {
         toggle.addEventListener('click', () => {
