@@ -29,7 +29,11 @@ class AuditLogController extends Controller
             $query->where('action', $request->get('action'));
         }
 
-        $logs = $query->paginate(30)->appends($request->query());
+        $defaultPerPage = 30;
+        $perPageParam = $request->get('per_page');
+        $perPage = $perPageParam === 'all' ? 10000 : (in_array((int)$perPageParam, [25, 30, 50, 100]) ? (int)$perPageParam : $defaultPerPage);
+
+        $logs = $query->paginate($perPage)->appends($request->query());
         $actions = AuditLog::distinct()->pluck('action')->sort();
 
         return view('acl::audit_logs.index', compact('logs', 'actions'));

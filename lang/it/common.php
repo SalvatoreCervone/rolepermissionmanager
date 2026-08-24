@@ -18,4 +18,10 @@ return [
     'none'         => 'Nessuno',
     'select_all'   => 'Seleziona Tutti',
     'confirm_delete' => 'Sei sicuro di voler procedere con l\'eliminazione?',
+    'per_page'     => 'Per pagina',
+    'all'          => 'Tutti',
+    'showing'      => 'Mostra',
+    'to'           => 'a',
+    'of'           => 'di',
+    'results'      => 'risultati',
 ];

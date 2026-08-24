@@ -13,11 +13,14 @@ class RoleController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = config('rolepermissionmanager.admin_panel.per_page', 25);
+        $defaultPerPage = (int) config('rolepermissionmanager.admin_panel.per_page', 25);
+        $perPageParam = $request->get('per_page');
+        $perPage = $perPageParam === 'all' ? 10000 : (in_array((int)$perPageParam, [25, 50, 100]) ? (int)$perPageParam : $defaultPerPage);
 
         $roles = Role::withCount('permissions')
             ->orderBy('name')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->appends($request->query());
 
         return view('acl::roles.index', compact('roles'));
     }

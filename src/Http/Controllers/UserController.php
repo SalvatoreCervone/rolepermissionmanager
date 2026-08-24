@@ -69,7 +69,9 @@ class UserController extends Controller
         $searchableFields = (array) ($modelConfig['searchable_fields'] ?? ['name', 'email']);
         $displayField = $modelConfig['display_field'] ?? 'name';
         $secondaryField = $modelConfig['secondary_field'] ?? 'email';
-        $perPage = config('rolepermissionmanager.users.per_page', 25);
+        $defaultPerPage = (int) ($modelConfig['per_page'] ?? config('rolepermissionmanager.users.per_page', 25));
+        $perPageParam = $request->get('per_page');
+        $perPage = $perPageParam === 'all' ? 10000 : (in_array((int)$perPageParam, [25, 50, 100]) ? (int)$perPageParam : $defaultPerPage);
 
         $query = (new $modelClass)->newQuery()->with(['roles', 'permissions']);
 

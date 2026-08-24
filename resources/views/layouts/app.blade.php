@@ -573,6 +573,12 @@
             padding-top: 16px;
             border-top: 1px solid var(--border);
         }
+        .pagination-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
         .pagination-summary {
             font-size: 13px;
             color: var(--text-muted);
@@ -580,6 +586,33 @@
         .pagination-summary .fw-bold {
             font-weight: 600;
             color: var(--text-primary);
+        }
+        .pagination-per-page {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .per-page-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .per-page-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: var(--radius-sm);
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all var(--transition);
+        }
+        .per-page-select:focus, .per-page-select:hover {
+            border-color: var(--accent);
+            background: var(--bg-input);
         }
         .pagination-list {
             display: flex;

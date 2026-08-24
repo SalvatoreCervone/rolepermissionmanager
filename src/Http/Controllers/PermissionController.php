@@ -12,7 +12,9 @@ class PermissionController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = config('rolepermissionmanager.admin_panel.per_page', 25);
+        $defaultPerPage = (int) config('rolepermissionmanager.admin_panel.per_page', 25);
+        $perPageParam = $request->get('per_page');
+        $perPage = $perPageParam === 'all' ? 10000 : (in_array((int)$perPageParam, [25, 50, 100]) ? (int)$perPageParam : $defaultPerPage);
         $moduleFilter = $request->get('module');
 
         $query = Permission::withCount('roles', 'securedResources')->orderBy('module')->orderBy('name');

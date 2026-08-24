@@ -18,4 +18,10 @@ return [
     'none'         => 'None',
     'select_all'   => 'Select All',
     'confirm_delete' => 'Are you sure you want to proceed with deletion?',
+    'per_page'     => 'Per page',
+    'all'          => 'All',
+    'showing'      => 'Showing',
+    'to'           => 'to',
+    'of'           => 'of',
+    'results'      => 'results',
 ];

@@ -118,6 +118,25 @@ class AdminPanelTest extends TestCase
         $response->assertSee('Ignored / Excluded');
     }
 
+    public function test_routes_index_supports_custom_per_page(): void
+    {
+        SecuredResource::create([
+            'identifier'        => 'orders.index',
+            'type'              => SecuredResource::TYPE_ROUTE,
+            'controller_action' => 'OrderController@index',
+            'method'            => 'GET',
+            'uri'               => 'api/orders',
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+
+        $response = $this->get('/acl-admin/routes?per_page=50');
+        $response->assertStatus(200);
+        $response->assertSee('per_page=50');
+        $response->assertSee('per_page=100');
+        $response->assertSee('per_page=all');
+    }
+
     public function test_can_update_route_configuration(): void
     {
         $resource = SecuredResource::create([
