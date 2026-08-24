@@ -142,29 +142,56 @@
             <table>
                 <thead>
                     <tr>
-                        <th>{{ __('acl::routes.method') }}</th>
-                        <th>{{ __('acl::routes.identifier') }}</th>
-                        <th>{{ __('acl::routes.uri') }}</th>
-                        <th>{{ __('acl::routes.controller_action') }}</th>
-                        <th>{{ __('acl::routes.exclusion_reason') }}</th>
-                        <th>{{ __('acl::routes.status') }}</th>
-                        <th>{{ __('acl::common.actions') }}</th>
+                        <th style="min-width: 320px;">{{ __('acl::routes.route_info') }}</th>
+                        <th style="min-width: 200px;">{{ __('acl::routes.exclusion_reason') }}</th>
+                        <th style="width: 140px; text-align: right;">{{ __('acl::common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($routes as $route)
                     <tr>
-                        <td><span class="badge badge-{{ strtolower($route->method ?? 'get') }}">{{ $route->method }}</span></td>
-                        <td><code>{{ $route->identifier }}</code></td>
-                        <td><code>{{ $route->uri }}</code></td>
-                        <td><code style="font-size: 12px;">{{ $route->controller_action }}</code></td>
-                        <td>
+                        <td style="vertical-align: top;">
+                            {{-- Line 1: Method badge + Identifier + Skipped badge --}}
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="badge badge-{{ strtolower($route->method ?? 'get') }}">{{ $route->method }}</span>
+                                    <strong style="font-size: 14px; color: var(--text-primary); font-family: 'JetBrains Mono', 'Fira Code', monospace;">{{ $route->identifier }}</strong>
+                                </div>
+                                <span class="badge" style="background: var(--warning-subtle); color: var(--warning);">{{ __('acl::routes.skipped') }}</span>
+                            </div>
+
+                            {{-- Line 2: URI + Controller Action + Source File --}}
+                            <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span>🌐</span>
+                                    <code>/{{ ltrim($route->uri, '/') }}</code>
+                                </div>
+
+                                @if($route->controller_action && $route->controller_action !== '—')
+                                    <div style="display: flex; align-items: center; gap: 5px;" title="{{ $route->controller_action }}">
+                                        <span>⚡</span>
+                                        <code style="font-size: 11px; color: var(--text-secondary);">
+                                            {{ \Illuminate\Support\Str::replaceFirst('App\\Http\\Controllers\\', '', $route->controller_action) }}
+                                        </code>
+                                    </div>
+                                @endif
+
+                                @if(isset($route->source_file) && $route->source_file)
+                                    <div style="display: flex; align-items: center; gap: 5px;" title="{{ __('acl::routes.source_file') }}: {{ $route->source_file }}">
+                                        <span>📄</span>
+                                        <span class="badge" style="background: var(--bg-primary); border: 1px solid var(--border); color: var(--info); font-size: 11px; font-family: monospace;">
+                                            {{ $route->source_file }}
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
+                        </td>
+
+                        <td style="vertical-align: middle;">
                             <span style="color: var(--warning); font-size: 13px;">⚠️ {{ $route->reason }}</span>
                         </td>
-                        <td>
-                            <span class="badge" style="background: var(--warning-subtle); color: var(--warning);">{{ __('acl::routes.skipped') }}</span>
-                        </td>
-                        <td>
+
+                        <td style="text-align: right; vertical-align: middle;">
                             <a href="{{ route('acl.scanner_rules.index') }}" class="btn btn-secondary btn-sm" title="{{ __('acl::routes.manage_rules') }}">⚙️ {{ __('acl::nav.scanner_rules') }}</a>
                         </td>
                     </tr>
@@ -182,53 +209,81 @@
                         <th style="width: 40px; text-align: center;">
                             <input type="checkbox" id="selectAllRoutes" title="{{ __('acl::common.select_all') }}">
                         </th>
-                        <th>{{ __('acl::routes.method') }}</th>
-                        <th>{{ __('acl::routes.identifier') }}</th>
-                        <th>{{ __('acl::routes.uri') }}</th>
-                        <th>{{ __('acl::routes.controller_action') }}</th>
-                        <th>{{ __('acl::routes.status') }}</th>
-                        <th>{{ __('acl::routes.operator') }}</th>
-                        <th>{{ __('acl::roles.permissions') }}</th>
-                        <th>{{ __('acl::common.actions') }}</th>
+                        <th style="min-width: 320px;">{{ __('acl::routes.route_info') }}</th>
+                        <th style="min-width: 220px;">{{ __('acl::roles.permissions') }}</th>
+                        <th style="width: 110px; text-align: right;">{{ __('acl::common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($routes as $route)
                     <tr style="{{ $route->is_deprecated ? 'opacity: 0.5;' : '' }}">
-                        <td style="text-align: center;">
+                        <td style="text-align: center; vertical-align: top; padding-top: 16px;">
                             <input type="checkbox" class="route-select-cb" value="{{ $route->id }}" data-identifier="{{ $route->identifier }}">
                         </td>
-                        <td><span class="badge badge-{{ strtolower($route->method ?? 'get') }}">{{ $route->method }}</span></td>
-                        <td><code>{{ $route->identifier }}</code></td>
-                        <td><code>{{ $route->uri }}</code></td>
-                        <td>
-                            @if($route->controller_action)
-                                <code style="font-size: 12px;">{{ $route->controller_action }}</code>
-                            @else
-                                <span style="color: var(--text-muted);">—</span>
-                            @endif
+                        <td style="vertical-align: top;">
+                            {{-- Line 1: Method badge + Identifier (bold) + Status & Operator badges --}}
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span class="badge badge-{{ strtolower($route->method ?? 'get') }}">{{ $route->method }}</span>
+                                    <strong style="font-size: 14px; color: var(--text-primary); font-family: 'JetBrains Mono', 'Fira Code', monospace;">{{ $route->identifier }}</strong>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    @if($route->is_deprecated)
+                                        <span class="badge badge-deprecated">{{ __('acl::routes.deprecated') }}</span>
+                                    @elseif($route->is_super_admin_only)
+                                        <span class="badge" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">👑 {{ __('acl::routes.super_admin') }}</span>
+                                    @elseif($route->is_public)
+                                        <span class="badge badge-public">{{ __('acl::routes.public') }}</span>
+                                    @else
+                                        <span class="badge badge-protected">{{ __('acl::routes.protected') }}</span>
+                                        <span class="badge badge-{{ strtolower($route->operator) }}" style="font-size: 10px; padding: 2px 6px;">{{ $route->operator }}</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Line 2: URI + Controller Action + Source File Badge --}}
+                            <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap;">
+                                {{-- URI --}}
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span>🌐</span>
+                                    <code>/{{ ltrim($route->uri, '/') }}</code>
+                                </div>
+
+                                {{-- Controller Action --}}
+                                @if($route->controller_action && $route->controller_action !== '—')
+                                    <div style="display: flex; align-items: center; gap: 5px;" title="{{ $route->controller_action }}">
+                                        <span>⚡</span>
+                                        <code style="font-size: 11px; color: var(--text-secondary);">
+                                            {{ \Illuminate\Support\Str::replaceFirst('App\\Http\\Controllers\\', '', $route->controller_action) }}
+                                        </code>
+                                    </div>
+                                @endif
+
+                                {{-- Route Source File Badge --}}
+                                @if($route->source_file)
+                                    <div style="display: flex; align-items: center; gap: 5px;" title="{{ __('acl::routes.source_file') }}: {{ $route->source_file }}">
+                                        <span>📄</span>
+                                        <span class="badge" style="background: var(--bg-primary); border: 1px solid var(--border); color: var(--info); font-size: 11px; font-family: monospace;">
+                                            {{ $route->source_file }}
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
                         </td>
-                        <td>
-                            @if($route->is_deprecated)
-                                <span class="badge badge-deprecated">{{ __('acl::routes.deprecated') }}</span>
-                            @elseif($route->is_super_admin_only)
-                                <span class="badge" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">👑 {{ __('acl::routes.super_admin') }}</span>
-                            @elseif($route->is_public)
-                                <span class="badge badge-public">{{ __('acl::routes.public') }}</span>
-                            @else
-                                <span class="badge badge-protected">{{ __('acl::routes.protected') }}</span>
-                            @endif
+
+                        <td style="vertical-align: middle;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                @forelse($route->permissions as $perm)
+                                    <span class="chip">{{ $perm->slug }}</span>
+                                @empty
+                                    <span style="color: var(--warning); font-size: 12px;">⚠️ {{ __('acl::routes.no_permissions') }}</span>
+                                @endforelse
+                            </div>
                         </td>
-                        <td><span class="badge badge-{{ strtolower($route->operator) }}">{{ $route->operator }}</span></td>
-                        <td>
-                            @forelse($route->permissions as $perm)
-                                <span class="chip">{{ $perm->slug }}</span>
-                            @empty
-                                <span style="color: var(--warning); font-size: 12px;">⚠️ {{ __('acl::routes.no_permissions') }}</span>
-                            @endforelse
-                        </td>
-                        <td>
-                            <a href="{{ route('acl.routes.edit', $route->id) }}" class="btn btn-secondary btn-sm">{{ __('acl::routes.configure') }}</a>
+
+                        <td style="text-align: right; vertical-align: middle;">
+                            <a href="{{ route('acl.routes.edit', $route->id) }}" class="btn btn-secondary btn-sm">⚙️ {{ __('acl::routes.configure') }}</a>
                         </td>
                     </tr>
                     @endforeach

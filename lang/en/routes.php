@@ -16,6 +16,7 @@ return [
     'has_permissions_assigned'      => 'With Permissions',
     'uri'                          => 'URI',
     'controller_action'            => 'Controller Action',
+    'source_file'                  => 'Route Source File',
     'status'                       => 'Status',
     'operator'                     => 'Operator',
     'operator_label'               => 'Permissions Operator',

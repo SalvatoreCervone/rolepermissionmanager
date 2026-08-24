@@ -41,6 +41,7 @@ class RouteResourceController extends Controller
                     return str_contains(strtolower($item->identifier), $search)
                         || str_contains(strtolower($item->uri), $search)
                         || str_contains(strtolower($item->controller_action), $search)
+                        || str_contains(strtolower($item->source_file ?? ''), $search)
                         || str_contains(strtolower($item->reason), $search);
                 });
             }
@@ -96,7 +97,8 @@ class RouteResourceController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('identifier', 'like', "%{$search}%")
                   ->orWhere('uri', 'like', "%{$search}%")
-                  ->orWhere('controller_action', 'like', "%{$search}%");
+                  ->orWhere('controller_action', 'like', "%{$search}%")
+                  ->orWhere('source_file', 'like', "%{$search}%");
             });
         }
 

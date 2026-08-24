@@ -250,6 +250,7 @@ class RouteScanner
                     'method'            => $primaryMethod,
                     'uri'               => $route->uri(),
                     'controller_action' => $this->resolveControllerAction($route),
+                    'source_file'       => $this->resolveSourceFile($route),
                     'reason'            => $reason,
                     'is_skipped'        => true,
                 ]);
@@ -257,6 +258,128 @@ class RouteScanner
         }
 
         return $skipped;
+    }
+
+    /**
+     * Cache of route file contents for fast lookup.
+     */
+    protected array $routeFilesCache = [];
+
+    /**
+     * Resolve the source file where this route was defined.
+     */
+    public function resolveSourceFile(Route $route): ?string
+    {
+        // 1. If it's a Closure, reflection gives the exact file immediately.
+        $uses = $route->getAction('uses');
+        if ($uses instanceof \Closure) {
+            $ref = new \ReflectionFunction($uses);
+            $fileName = $ref->getFileName();
+            if ($fileName && file_exists($fileName)) {
+                return $this->formatRelativePath($fileName);
+            }
+        }
+
+        // 2. Scan route files in routes/ directory and any custom configured files.
+        $this->loadRouteFilesCache();
+
+        $name = $route->getName();
+        $uri = $route->uri();
+        $action = $route->getActionName();
+
+        // Search by route name first if available
+        if ($name) {
+            foreach ($this->routeFilesCache as $file => $content) {
+                if (str_contains($content, "'{$name}'") || str_contains($content, "\"{$name}\"")) {
+                    return $this->formatRelativePath($file);
+                }
+            }
+        }
+
+        // Search by URI pattern
+        if ($uri && $uri !== '/') {
+            $cleanUri = trim($uri, '/');
+            foreach ($this->routeFilesCache as $file => $content) {
+                if (str_contains($content, "'{$cleanUri}'") || str_contains($content, "\"{$cleanUri}\"") || str_contains($content, "'/{$cleanUri}'") || str_contains($content, "\"/{$cleanUri}\"")) {
+                    return $this->formatRelativePath($file);
+                }
+            }
+        }
+
+        // Search by Controller method
+        if ($action && $action !== 'Closure' && str_contains($action, '@')) {
+            $methodPart = explode('@', $action)[1] ?? '';
+            $classPart = class_basename(explode('@', $action)[0] ?? '');
+            if ($methodPart && $classPart) {
+                foreach ($this->routeFilesCache as $file => $content) {
+                    if (str_contains($content, $classPart) && str_contains($content, $methodPart)) {
+                        return $this->formatRelativePath($file);
+                    }
+                }
+            }
+        }
+
+        // 3. Fallback based on middleware groups & prefixes
+        $middlewares = method_exists($route, 'gatherMiddleware') ? $route->gatherMiddleware() : [];
+        if (in_array('api', $middlewares) || Str::startsWith($uri, 'api/')) {
+            return 'routes/api.php';
+        }
+        if (in_array('web', $middlewares)) {
+            return 'routes/web.php';
+        }
+
+        return null;
+    }
+
+    /**
+     * Populate cache of route files.
+     */
+    protected function loadRouteFilesCache(): void
+    {
+        if (!empty($this->routeFilesCache)) {
+            return;
+        }
+
+        $files = [];
+
+        // Check base_path('routes') if available
+        $routesDir = function_exists('base_path') ? base_path('routes') : null;
+        if ($routesDir && is_dir($routesDir)) {
+            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($routesDir));
+            foreach ($iterator as $f) {
+                if ($f->isFile() && $f->getExtension() === 'php') {
+                    $files[] = $f->getPathname();
+                }
+            }
+        }
+
+        // Add configured custom files
+        $customFiles = config('rolepermissionmanager.scanner.route_files', []);
+        foreach ($customFiles as $cf) {
+            $path = Str::startsWith($cf, '/') ? $cf : (function_exists('base_path') ? base_path($cf) : $cf);
+            if (file_exists($path) && !in_array($path, $files)) {
+                $files[] = $path;
+            }
+        }
+
+        foreach ($files as $filePath) {
+            if (is_readable($filePath)) {
+                $this->routeFilesCache[$filePath] = file_get_contents($filePath);
+            }
+        }
+    }
+
+    /**
+     * Format a path relative to the application base path.
+     */
+    protected function formatRelativePath(string $fullPath): string
+    {
+        $base = function_exists('base_path') ? base_path() : '';
+        if ($base && Str::startsWith($fullPath, $base)) {
+            return ltrim(Str::replaceFirst($base, '', $fullPath), '/\\');
+        }
+
+        return $fullPath;
     }
 
     /**
@@ -316,6 +439,7 @@ class RouteScanner
         $attributes = [
             'type'              => SecuredResource::TYPE_ROUTE,
             'controller_action' => $this->resolveControllerAction($route),
+            'source_file'       => $this->resolveSourceFile($route),
             'method'            => $primaryMethod,
             'uri'               => $route->uri(),
             'is_deprecated'     => false,

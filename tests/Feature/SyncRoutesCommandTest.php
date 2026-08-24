@@ -219,6 +219,19 @@ class SyncRoutesCommandTest extends TestCase
 
         $this->assertContains('GET:ricercacorsi', $summary['created']);
     }
+
+    public function test_scanner_resolves_route_source_file(): void
+    {
+        \Illuminate\Support\Facades\Route::get('/closure-route', fn() => 'closure')->name('closure.route');
+
+        $scanner = new RouteScanner(app('router'));
+        $scanner->scan();
+
+        $resource = SecuredResource::findByIdentifier('closure.route');
+        $this->assertNotNull($resource);
+        $this->assertNotNull($resource->source_file);
+        $this->assertStringContainsString('SyncRoutesCommandTest.php', $resource->source_file);
+    }
 }
 
 

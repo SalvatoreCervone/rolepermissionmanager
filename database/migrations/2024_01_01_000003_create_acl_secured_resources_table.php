@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('type', 20)->default('route')->index()->comment('Resource type: route or custom');
             $table->string('description')->nullable()->comment('Human readable description');
             $table->string('controller_action')->nullable()->comment('Full controller@method or class@method for traceability');
+            $table->string('source_file')->nullable()->comment('Route definition source file e.g. routes/web.php');
             $table->string('method', 10)->nullable()->index()->comment('HTTP verb: GET, POST, PUT, PATCH, DELETE (null for custom)');
             $table->string('uri')->nullable()->comment('Route URI pattern e.g. api/v1/users/{id} (null for custom)');
             $table->boolean('is_public')->default(false)->comment('If true, bypasses all auth checks');

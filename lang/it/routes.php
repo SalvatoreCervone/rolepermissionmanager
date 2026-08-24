@@ -16,6 +16,7 @@ return [
     'has_permissions_assigned'      => 'Con Permessi',
     'uri'                          => 'URI',
     'controller_action'            => 'Azione Controller',
+    'source_file'                  => 'File Origine Rotta',
     'status'                       => 'Stato',
     'operator'                     => 'Operatore',
     'operator_label'               => 'Operatore Permessi',

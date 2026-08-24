@@ -31,6 +31,12 @@
                 <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::routes.controller_action') }}</label>
                 <div style="margin-top: 4px;"><code style="font-size: 12px;">{{ $resource->controller_action }}</code></div>
             </div>
+            @if($resource->source_file)
+            <div style="grid-column: span 2;">
+                <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ __('acl::routes.source_file') }}</label>
+                <div style="margin-top: 4px;"><span class="badge" style="background: var(--bg-primary); border: 1px solid var(--border); color: var(--info); font-size: 12px; font-family: monospace;">📄 {{ $resource->source_file }}</span></div>
+            </div>
+            @endif
         </div>
     </div>
 
