@@ -96,8 +96,24 @@
             <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🛡️ {{ __('acl::resources.protected') }}</option>
             <option value="super_admin" {{ request('status') === 'super_admin' ? 'selected' : '' }}>👑 {{ __('acl::routes.super_admin') }}</option>
         </select>
+        <select name="permission" class="form-control" onchange="this.form.submit()">
+            <option value="">{{ __('acl::routes.all_permissions') }}</option>
+            <option value="none" {{ request('permission') === 'none' ? 'selected' : '' }}>⚠️ {{ __('acl::routes.no_permissions_assigned') }}</option>
+            <option value="has_any" {{ request('permission') === 'has_any' ? 'selected' : '' }}>🔒 {{ __('acl::routes.has_permissions_assigned') }}</option>
+            @if(isset($allPermissions))
+                @foreach($allPermissions as $module => $perms)
+                    <optgroup label="{{ $module ?: __('acl::permissions.uncategorized') }}">
+                        @foreach($perms as $perm)
+                            <option value="{{ $perm->id }}" {{ (string)request('permission') === (string)$perm->id ? 'selected' : '' }}>
+                                {{ $perm->name }} ({{ $perm->slug }})
+                            </option>
+                        @endforeach
+                    </optgroup>
+                @endforeach
+            @endif
+        </select>
         <button type="submit" class="btn btn-secondary btn-sm">{{ __('acl::common.filter') }}</button>
-        @if(request()->hasAny(['search', 'status']))
+        @if(request()->hasAny(['search', 'status', 'permission']))
             <a href="{{ route('acl.resources.index') }}" class="btn btn-secondary btn-sm">{{ __('acl::common.clear') }}</a>
         @endif
     </form>

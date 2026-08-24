@@ -95,12 +95,33 @@ class UserController extends Controller
             });
         }
 
+        if ($request->filled('permission')) {
+            $permission = $request->get('permission');
+            if ($permission === 'none') {
+                $query->whereDoesntHave('permissions')->whereDoesntHave('roles.permissions');
+            } elseif ($permission === 'has_any') {
+                $query->where(function ($q) {
+                    $q->whereHas('permissions')->orWhereHas('roles.permissions');
+                });
+            } else {
+                $query->where(function ($q) use ($permission) {
+                    $q->whereHas('permissions', function ($p) use ($permission) {
+                        $p->where('id', $permission)->orWhere('slug', $permission);
+                    })->orWhereHas('roles.permissions', function ($p) use ($permission) {
+                        $p->where('id', $permission)->orWhere('slug', $permission);
+                    });
+                });
+            }
+        }
+
         $users = $query->paginate($perPage)->appends($request->query());
         $roles = Role::orderBy('name')->get();
+        $allPermissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
 
         return view('acl::users.index', compact(
             'users',
             'roles',
+            'allPermissions',
             'displayField',
             'secondaryField',
             'searchableFields',

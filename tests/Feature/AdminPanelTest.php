@@ -137,6 +137,44 @@ class AdminPanelTest extends TestCase
         $response->assertSee('per_page=all');
     }
 
+    public function test_routes_index_can_filter_by_permissions(): void
+    {
+        $perm = Permission::create(['name' => 'View Orders', 'slug' => 'orders.view']);
+
+        $routeWithPerm = SecuredResource::create([
+            'identifier'        => 'orders.view_route',
+            'type'              => SecuredResource::TYPE_ROUTE,
+            'controller_action' => 'OrderController@view',
+            'method'            => 'GET',
+            'uri'               => 'api/orders/view',
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+        $routeWithPerm->permissions()->attach($perm->id);
+
+        $routeWithoutPerm = SecuredResource::create([
+            'identifier'        => 'orders.orphan_route',
+            'type'              => SecuredResource::TYPE_ROUTE,
+            'controller_action' => 'OrderController@orphan',
+            'method'            => 'GET',
+            'uri'               => 'api/orders/orphan',
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+
+        // 1. Filter without permissions
+        $respNone = $this->get('/acl-admin/routes?permission=none');
+        $respNone->assertStatus(200);
+        $respNone->assertSee('orders.orphan_route');
+        $respNone->assertDontSee('orders.view_route');
+
+        // 2. Filter with specific permission
+        $respSpecific = $this->get("/acl-admin/routes?permission={$perm->id}");
+        $respSpecific->assertStatus(200);
+        $respSpecific->assertSee('orders.view_route');
+        $respSpecific->assertDontSee('orders.orphan_route');
+    }
+
     public function test_can_update_route_configuration(): void
     {
         $resource = SecuredResource::create([

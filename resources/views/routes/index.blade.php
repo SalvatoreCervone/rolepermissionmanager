@@ -109,8 +109,24 @@
             <option value="deprecated" {{ request('status') === 'deprecated' ? 'selected' : '' }}>📦 {{ __('acl::routes.deprecated') }}</option>
             <option value="skipped" {{ request('status') === 'skipped' ? 'selected' : '' }}>⏭️ {{ __('acl::routes.skipped') }}</option>
         </select>
+        <select name="permission" class="form-control" onchange="this.form.submit()">
+            <option value="">{{ __('acl::routes.all_permissions') }}</option>
+            <option value="none" {{ request('permission') === 'none' ? 'selected' : '' }}>⚠️ {{ __('acl::routes.no_permissions_assigned') }}</option>
+            <option value="has_any" {{ request('permission') === 'has_any' ? 'selected' : '' }}>🔒 {{ __('acl::routes.has_permissions_assigned') }}</option>
+            @if(isset($allPermissions))
+                @foreach($allPermissions as $module => $perms)
+                    <optgroup label="{{ $module ?: __('acl::permissions.uncategorized') }}">
+                        @foreach($perms as $perm)
+                            <option value="{{ $perm->id }}" {{ (string)request('permission') === (string)$perm->id ? 'selected' : '' }}>
+                                {{ $perm->name }} ({{ $perm->slug }})
+                            </option>
+                        @endforeach
+                    </optgroup>
+                @endforeach
+            @endif
+        </select>
         <button type="submit" class="btn btn-secondary btn-sm">{{ __('acl::common.filter') }}</button>
-        @if(request()->hasAny(['search', 'method', 'status']))
+        @if(request()->hasAny(['search', 'method', 'status', 'permission']))
             <a href="{{ route('acl.routes.index') }}" class="btn btn-secondary btn-sm">{{ __('acl::common.clear') }}</a>
         @endif
     </form>

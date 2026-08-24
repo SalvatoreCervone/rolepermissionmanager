@@ -32,6 +32,19 @@ class SecuredResourceController extends Controller
                 default       => null,
             };
         }
+        if ($request->filled('permission')) {
+            $permission = $request->get('permission');
+            if ($permission === 'none') {
+                $query->whereDoesntHave('permissions');
+            } elseif ($permission === 'has_any') {
+                $query->whereHas('permissions');
+            } else {
+                $query->whereHas('permissions', function ($q) use ($permission) {
+                    $q->where('id', $permission)->orWhere('slug', $permission);
+                });
+            }
+        }
+
         if ($request->filled('search')) {
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
