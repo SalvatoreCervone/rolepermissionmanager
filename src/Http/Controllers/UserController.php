@@ -331,7 +331,7 @@ class UserController extends Controller
         $user = $query->findOrFail($id);
 
         $validated = $request->validate([
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
         $schema = $user->getConnection()->getSchemaBuilder();
@@ -418,7 +418,7 @@ class UserController extends Controller
         $user = $query->findOrFail($id);
 
         $validated = $request->validate([
-            'password' => 'nullable|string|min:6',
+            'password' => 'nullable|string|min:6|confirmed',
         ]);
 
         $schema = $user->getConnection()->getSchemaBuilder();

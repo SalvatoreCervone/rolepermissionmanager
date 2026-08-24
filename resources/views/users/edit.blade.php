@@ -126,14 +126,18 @@
             <p style="margin-top: 0; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">
                 {{ __('acl::users.reset_password') }} per <strong id="resetPasswordUserName" style="color: var(--text-primary);"></strong>
             </p>
-            <div style="margin-bottom: 16px;">
+            <div style="margin-bottom: 14px;">
                 <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">{{ __('acl::users.new_password') }}</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" name="password" id="resetPasswordInput" class="form-control" placeholder="{{ __('acl::users.password_placeholder') }}" required minlength="6" style="flex: 1;">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="generateRandomPassword('resetPasswordInput')">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="generateRandomPassword('resetPasswordInput', 'resetPasswordConfirmInput')">
                         🎲 {{ __('acl::users.generate_password') }}
                     </button>
                 </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">{{ __('acl::users.confirm_password') }}</label>
+                <input type="text" name="password_confirmation" id="resetPasswordConfirmInput" class="form-control" placeholder="{{ __('acl::users.password_confirmation_placeholder') }}" required minlength="6">
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="closeResetPasswordModal()">{{ __('acl::common.cancel') }}</button>
@@ -181,14 +185,18 @@
             <p style="margin-top: 0; font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
                 Riattiva l'accesso per <strong id="activateUserName" style="color: var(--text-primary);"></strong>. Puoi facoltativamente impostare una nuova password.
             </p>
-            <div style="margin-bottom: 16px;">
+            <div style="margin-bottom: 14px;">
                 <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">{{ __('acl::users.new_password') }} (opzionale)</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" name="password" id="activatePasswordInput" class="form-control" placeholder="{{ __('acl::users.password_placeholder') }}" minlength="6" style="flex: 1;">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="generateRandomPassword('activatePasswordInput')">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="generateRandomPassword('activatePasswordInput', 'activatePasswordConfirmInput')">
                         🎲 {{ __('acl::users.generate_password') }}
                     </button>
                 </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">{{ __('acl::users.confirm_password') }}</label>
+                <input type="text" name="password_confirmation" id="activatePasswordConfirmInput" class="form-control" placeholder="{{ __('acl::users.password_confirmation_placeholder') }}" minlength="6">
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="closeActivateModal()">{{ __('acl::common.cancel') }}</button>
@@ -204,6 +212,8 @@
     function openResetPasswordModal(id, name) {
         document.getElementById('resetPasswordUserName').textContent = name;
         document.getElementById('resetPasswordInput').value = '';
+        const confirmInput = document.getElementById('resetPasswordConfirmInput');
+        if (confirmInput) confirmInput.value = '';
         let url = '{{ route('acl.users.reset_password', ['id' => ':id']) }}'.replace(':id', id);
         if (modelParam) url += '?model=' + encodeURIComponent(modelParam);
         document.getElementById('resetPasswordForm').action = url;
@@ -229,6 +239,8 @@
     function openActivateModal(id, name) {
         document.getElementById('activateUserName').textContent = name;
         document.getElementById('activatePasswordInput').value = '';
+        const confirmInput = document.getElementById('activatePasswordConfirmInput');
+        if (confirmInput) confirmInput.value = '';
         let url = '{{ route('acl.users.activate', ['id' => ':id']) }}'.replace(':id', id);
         if (modelParam) url += '?model=' + encodeURIComponent(modelParam);
         document.getElementById('activateForm').action = url;
@@ -239,7 +251,7 @@
         document.getElementById('activateModal').style.display = 'none';
     }
 
-    function generateRandomPassword(inputId) {
+    function generateRandomPassword(inputId, confirmInputId) {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
         let pass = '';
         for (let i = 0; i < 12; i++) {
@@ -249,6 +261,13 @@
         if (input) {
             input.value = pass;
             input.type = 'text';
+        }
+        if (confirmInputId) {
+            const confirmInput = document.getElementById(confirmInputId);
+            if (confirmInput) {
+                confirmInput.value = pass;
+                confirmInput.type = 'text';
+            }
         }
     }
 </script>

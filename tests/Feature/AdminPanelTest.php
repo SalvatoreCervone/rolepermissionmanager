@@ -401,13 +401,29 @@ class AdminPanelTest extends TestCase
         $user = $this->createUser(['name' => 'Mario Rossi', 'email' => 'mario@test.com', 'password' => 'old_hash']);
 
         $response = $this->post("/acl-admin/users/{$user->id}/reset-password", [
-            'password' => 'Secret123!',
+            'password'              => 'Secret123!',
+            'password_confirmation' => 'Secret123!',
         ]);
 
         $response->assertRedirect();
         $user->refresh();
 
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Secret123!', $user->password));
+    }
+
+    public function test_reset_password_requires_matching_confirmation(): void
+    {
+        $user = $this->createUser(['name' => 'Mario Rossi', 'email' => 'mario@test.com', 'password' => 'old_hash']);
+
+        $response = $this->post("/acl-admin/users/{$user->id}/reset-password", [
+            'password'              => 'Secret123!',
+            'password_confirmation' => 'Mismatch123!',
+        ]);
+
+        $response->assertSessionHasErrors(['password']);
+        $user->refresh();
+
+        $this->assertEquals('old_hash', $user->password);
     }
 
     public function test_can_deactivate_and_activate_user(): void
@@ -426,7 +442,8 @@ class AdminPanelTest extends TestCase
 
         // 2. Reactivate
         $actResp = $this->post("/acl-admin/users/{$user->id}/activate", [
-            'password' => 'NewPassword999!',
+            'password'              => 'NewPassword999!',
+            'password_confirmation' => 'NewPassword999!',
         ]);
         $actResp->assertRedirect();
         $user->refresh();
