@@ -396,6 +396,67 @@ class AdminPanelTest extends TestCase
         $response->assertSee('Utenti & Accessi');
     }
 
+    public function test_can_reset_user_password(): void
+    {
+        $user = $this->createUser(['name' => 'Mario Rossi', 'email' => 'mario@test.com', 'password' => 'old_hash']);
+
+        $response = $this->post("/acl-admin/users/{$user->id}/reset-password", [
+            'password' => 'Secret123!',
+        ]);
+
+        $response->assertRedirect();
+        $user->refresh();
+
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Secret123!', $user->password));
+    }
+
+    public function test_can_deactivate_and_activate_user(): void
+    {
+        $user = $this->createUser(['name' => 'Luigi Verdi', 'email' => 'luigi@test.com', 'password' => 'secret_hash']);
+
+        // 1. Deactivate
+        $deactResp = $this->post("/acl-admin/users/{$user->id}/deactivate");
+        $deactResp->assertRedirect();
+        $user->refresh();
+
+        $this->assertEquals('Deactivated', $user->password);
+        $this->assertEquals('Deactivated', $user->remember_token);
+        $this->assertNotNull($user->deleted_at);
+        $this->assertTrue(\SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::isUserDeactivated($user));
+
+        // 2. Reactivate
+        $actResp = $this->post("/acl-admin/users/{$user->id}/activate", [
+            'password' => 'NewPassword999!',
+        ]);
+        $actResp->assertRedirect();
+        $user->refresh();
+
+        $this->assertNull($user->deleted_at);
+        $this->assertNull($user->remember_token);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('NewPassword999!', $user->password));
+        $this->assertFalse(\SalvatoreCervone\RolePermissionManager\Http\Controllers\UserController::isUserDeactivated($user));
+    }
+
+    public function test_users_index_can_filter_by_status(): void
+    {
+        $activeUser = $this->createUser(['name' => 'Active User', 'email' => 'active@test.com']);
+        $deactUser = $this->createUser(['name' => 'Inactive User', 'email' => 'inactive@test.com']);
+        $this->post("/acl-admin/users/{$deactUser->id}/deactivate");
+        $this->flushSession();
+
+        // Filter active
+        $respActive = $this->get('/acl-admin/users?status=active');
+        $respActive->assertStatus(200);
+        $respActive->assertSee('Active User');
+        $respActive->assertDontSee('Inactive User');
+
+        // Filter deactivated
+        $respDeact = $this->get('/acl-admin/users?status=deactivated');
+        $respDeact->assertStatus(200);
+        $respDeact->assertSee('Inactive User');
+        $respDeact->assertDontSee('Active User');
+    }
+
     public function test_admin_panel_sync_routes_button_executes_successfully(): void
     {
         $response = $this->post('/acl-admin/routes/sync');

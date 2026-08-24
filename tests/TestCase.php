@@ -24,6 +24,8 @@ abstract class TestCase extends Orchestra
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password')->default('');
+            $table->string('remember_token')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -82,7 +84,7 @@ abstract class TestCase extends Orchestra
  */
 class TestUser extends Authenticatable
 {
-    use HasAcl;
+    use HasAcl, \Illuminate\Database\Eloquent\SoftDeletes;
 
     protected $table = 'users';
     protected $guarded = [];

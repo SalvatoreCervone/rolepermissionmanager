@@ -103,6 +103,7 @@ return [
         'display_field' => 'name',
         'secondary_field' => 'email',
         'per_page' => 25,
+        'deactivation_marker' => 'Deactivated', // Plain string substituted into password & remember_token upon deactivation
     ],
 
     /*

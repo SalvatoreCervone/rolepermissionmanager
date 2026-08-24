@@ -57,6 +57,29 @@ class UserController extends Controller
     }
 
     /**
+     * Check if a user is currently deactivated.
+     *
+     * @param  mixed  $user
+     */
+    public static function isUserDeactivated($user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if (!empty($user->deleted_at)) {
+            return true;
+        }
+
+        $marker = config('rolepermissionmanager.users.deactivation_marker', 'Deactivated');
+        if (isset($user->password) && $user->password === $marker) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Display a listing of users with their assigned roles and permissions.
      */
     public function index(Request $request)
@@ -73,7 +96,34 @@ class UserController extends Controller
         $perPageParam = $request->get('per_page');
         $perPage = $perPageParam === 'all' ? 10000 : (in_array((int)$perPageParam, [25, 50, 100]) ? (int)$perPageParam : $defaultPerPage);
 
+        $modelInstance = new $modelClass;
+        $schema = $modelInstance->getConnection()->getSchemaBuilder();
+        $hasDeletedAt = $schema->hasColumn($modelInstance->getTable(), 'deleted_at');
+
         $query = (new $modelClass)->newQuery()->with(['roles', 'permissions']);
+        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($modelClass))) {
+            $query->withTrashed();
+        }
+
+        if ($request->filled('status')) {
+            $status = $request->get('status');
+            $marker = config('rolepermissionmanager.users.deactivation_marker', 'Deactivated');
+            if ($status === 'active') {
+                if ($hasDeletedAt) {
+                    $query->whereNull('deleted_at');
+                }
+                $query->where(function ($q) use ($marker) {
+                    $q->where('password', '!=', $marker)->orWhereNull('password');
+                });
+            } elseif ($status === 'deactivated') {
+                $query->where(function ($q) use ($hasDeletedAt, $marker) {
+                    if ($hasDeletedAt) {
+                        $q->whereNotNull('deleted_at');
+                    }
+                    $q->orWhere('password', $marker);
+                });
+            }
+        }
 
         if ($request->filled('search')) {
             $search = $request->get('search');
@@ -150,6 +200,9 @@ class UserController extends Controller
         $secondaryField = $modelConfig['secondary_field'] ?? 'email';
 
         $query = (new $modelClass)->newQuery()->with('roles');
+        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($modelClass))) {
+            $query->withTrashed();
+        }
 
         $query->where(function ($q) use ($queryText, $searchableFields) {
             foreach ($searchableFields as $index => $field) {
@@ -183,7 +236,11 @@ class UserController extends Controller
         $modelConfig = AclRegistry::getUserModelConfig($modelKey);
         $modelClass = $modelConfig['model'];
 
-        $user = (new $modelClass)->newQuery()->with(['roles', 'permissions'])->findOrFail($id);
+        $query = (new $modelClass)->newQuery()->with(['roles', 'permissions']);
+        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($modelClass))) {
+            $query->withTrashed();
+        }
+        $user = $query->findOrFail($id);
 
         $allRoles = Role::orderBy('name')->get();
         $allPermissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
@@ -211,7 +268,11 @@ class UserController extends Controller
         $modelConfig = AclRegistry::getUserModelConfig($modelKey);
         $modelClass = $modelConfig['model'];
 
-        $user = (new $modelClass)->newQuery()->findOrFail($id);
+        $query = (new $modelClass)->newQuery();
+        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($modelClass))) {
+            $query->withTrashed();
+        }
+        $user = $query->findOrFail($id);
 
         $rolesTable = config('rolepermissionmanager.tables.roles', 'acl_roles');
         $permissionsTable = config('rolepermissionmanager.tables.permissions', 'acl_permissions');
@@ -252,5 +313,137 @@ class UserController extends Controller
         return redirect()
             ->route('acl.users.edit', $redirectParams)
             ->with('success', __('acl::users.updated_success', ['name' => $userName]));
+    }
+
+    /**
+     * Reset the password for the specified user.
+     */
+    public function resetPassword(Request $request, $id)
+    {
+        $modelKey = $request->get('model');
+        $modelConfig = AclRegistry::getUserModelConfig($modelKey);
+        $modelClass = $modelConfig['model'];
+
+        $query = (new $modelClass)->newQuery();
+        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($modelClass))) {
+            $query->withTrashed();
+        }
+        $user = $query->findOrFail($id);
+
+        $validated = $request->validate([
+            'password' => 'required|string|min:6',
+        ]);
+
+        $schema = $user->getConnection()->getSchemaBuilder();
+        $table = $user->getTable();
+
+        if ($schema->hasColumn($table, 'password')) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
+        }
+        if ($schema->hasColumn($table, 'remember_token')) {
+            $user->remember_token = null;
+        }
+
+        $user->save();
+
+        $displayField = $modelConfig['display_field'] ?? 'name';
+        $userName = static::formatFieldValue($user, $displayField) ?: "User #{$user->getKey()}";
+
+        AuditLogger::log('user_password_reset', $modelConfig['label'] ?? 'User', $userName, "Password reset for user '{$userName}'");
+
+        return redirect()->back()->with('success', __('acl::users.password_reset_success', ['name' => $userName]));
+    }
+
+    /**
+     * Deactivate the specified user.
+     */
+    public function deactivate(Request $request, $id)
+    {
+        $modelKey = $request->get('model');
+        $modelConfig = AclRegistry::getUserModelConfig($modelKey);
+        $modelClass = $modelConfig['model'];
+
+        $query = (new $modelClass)->newQuery();
+        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($modelClass))) {
+            $query->withTrashed();
+        }
+        $user = $query->findOrFail($id);
+
+        $marker = config('rolepermissionmanager.users.deactivation_marker', 'Deactivated');
+        $schema = $user->getConnection()->getSchemaBuilder();
+        $table = $user->getTable();
+
+        // Substitute plain non-hashed marker in password & remember_token
+        if ($schema->hasColumn($table, 'password')) {
+            $user->password = $marker;
+        }
+        if ($schema->hasColumn($table, 'remember_token')) {
+            $user->remember_token = $marker;
+        }
+        if ($schema->hasColumn($table, 'deleted_at')) {
+            $user->deleted_at = now();
+        }
+
+        // Revoke active API/Sanctum tokens if supported
+        if (method_exists($user, 'tokens')) {
+            $user->tokens()->delete();
+        }
+
+        $user->save();
+
+        // Flush user cache
+        AclRegistry::flushUserCache($user->getKey());
+
+        $displayField = $modelConfig['display_field'] ?? 'name';
+        $userName = static::formatFieldValue($user, $displayField) ?: "User #{$user->getKey()}";
+
+        AuditLogger::log('user_deactivated', $modelConfig['label'] ?? 'User', $userName, "Deactivated user '{$userName}' and set deleted_at");
+
+        return redirect()->back()->with('success', __('acl::users.deactivated_success', ['name' => $userName]));
+    }
+
+    /**
+     * Reactivate the specified user.
+     */
+    public function activate(Request $request, $id)
+    {
+        $modelKey = $request->get('model');
+        $modelConfig = AclRegistry::getUserModelConfig($modelKey);
+        $modelClass = $modelConfig['model'];
+
+        $query = (new $modelClass)->newQuery();
+        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($modelClass))) {
+            $query->withTrashed();
+        }
+        $user = $query->findOrFail($id);
+
+        $validated = $request->validate([
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        $schema = $user->getConnection()->getSchemaBuilder();
+        $table = $user->getTable();
+
+        if ($schema->hasColumn($table, 'deleted_at')) {
+            $user->deleted_at = null;
+        }
+        if ($schema->hasColumn($table, 'remember_token')) {
+            $user->remember_token = null;
+        }
+        if (!empty($validated['password']) && $schema->hasColumn($table, 'password')) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
+        }
+
+        $user->save();
+
+        // Flush user cache
+        AclRegistry::flushUserCache($user->getKey());
+
+        $displayField = $modelConfig['display_field'] ?? 'name';
+        $userName = static::formatFieldValue($user, $displayField) ?: "User #{$user->getKey()}";
+
+        AuditLogger::log('user_activated', $modelConfig['label'] ?? 'User', $userName, "Reactivated user '{$userName}' and cleared deleted_at");
+
+        return redirect()->back()->with('success', __('acl::users.activated_success', ['name' => $userName]));
     }
 }

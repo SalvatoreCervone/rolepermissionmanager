@@ -29,6 +29,9 @@ Route::prefix($prefix)
         Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
         Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+        Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset_password');
+        Route::post('/users/{id}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+        Route::post('/users/{id}/activate', [UserController::class, 'activate'])->name('users.activate');
 
         // Roles Management
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
