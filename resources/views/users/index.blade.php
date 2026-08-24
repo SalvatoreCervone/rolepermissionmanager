@@ -178,7 +178,10 @@
             <div style="margin-bottom: 14px;">
                 <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">{{ __('acl::users.new_password') }}</label>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" name="password" id="resetPasswordInput" class="form-control" placeholder="{{ __('acl::users.password_placeholder') }}" required minlength="6" style="flex: 1;">
+                    <input type="password" name="password" id="resetPasswordInput" class="form-control" placeholder="{{ __('acl::users.password_placeholder') }}" required minlength="6" style="flex: 1;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnToggleResetPwd" onclick="togglePasswordVisibility('resetPasswordInput', this)" title="Mostra / Nascondi password">
+                        👁️
+                    </button>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="generateRandomPassword('resetPasswordInput', 'resetPasswordConfirmInput')">
                         🎲 {{ __('acl::users.generate_password') }}
                     </button>
@@ -186,7 +189,12 @@
             </div>
             <div style="margin-bottom: 16px;">
                 <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">{{ __('acl::users.confirm_password') }}</label>
-                <input type="text" name="password_confirmation" id="resetPasswordConfirmInput" class="form-control" placeholder="{{ __('acl::users.password_confirmation_placeholder') }}" required minlength="6">
+                <div style="display: flex; gap: 8px;">
+                    <input type="password" name="password_confirmation" id="resetPasswordConfirmInput" class="form-control" placeholder="{{ __('acl::users.password_confirmation_placeholder') }}" required minlength="6" style="flex: 1;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnToggleResetConfirmPwd" onclick="togglePasswordVisibility('resetPasswordConfirmInput', this)" title="Mostra / Nascondi password">
+                        👁️
+                    </button>
+                </div>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="closeResetPasswordModal()">{{ __('acl::common.cancel') }}</button>
@@ -237,7 +245,10 @@
             <div style="margin-bottom: 14px;">
                 <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">{{ __('acl::users.new_password') }} (opzionale)</label>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" name="password" id="activatePasswordInput" class="form-control" placeholder="{{ __('acl::users.password_placeholder') }}" minlength="6" style="flex: 1;">
+                    <input type="password" name="password" id="activatePasswordInput" class="form-control" placeholder="{{ __('acl::users.password_placeholder') }}" minlength="6" style="flex: 1;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnToggleActivatePwd" onclick="togglePasswordVisibility('activatePasswordInput', this)" title="Mostra / Nascondi password">
+                        👁️
+                    </button>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="generateRandomPassword('activatePasswordInput', 'activatePasswordConfirmInput')">
                         🎲 {{ __('acl::users.generate_password') }}
                     </button>
@@ -245,7 +256,12 @@
             </div>
             <div style="margin-bottom: 16px;">
                 <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">{{ __('acl::users.confirm_password') }}</label>
-                <input type="text" name="password_confirmation" id="activatePasswordConfirmInput" class="form-control" placeholder="{{ __('acl::users.password_confirmation_placeholder') }}" minlength="6">
+                <div style="display: flex; gap: 8px;">
+                    <input type="password" name="password_confirmation" id="activatePasswordConfirmInput" class="form-control" placeholder="{{ __('acl::users.password_confirmation_placeholder') }}" minlength="6" style="flex: 1;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnToggleActivateConfirmPwd" onclick="togglePasswordVisibility('activatePasswordConfirmInput', this)" title="Mostra / Nascondi password">
+                        👁️
+                    </button>
+                </div>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="closeActivateModal()">{{ __('acl::common.cancel') }}</button>
@@ -377,6 +393,18 @@
                 confirmInput.value = pass;
                 confirmInput.type = 'text';
             }
+        }
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            if (btn) btn.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            if (btn) btn.textContent = '👁️';
         }
     }
 </script>
