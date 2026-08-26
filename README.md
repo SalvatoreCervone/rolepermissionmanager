@@ -255,8 +255,11 @@ return [
         'per_page'          => 25,
     ],
 
-    // Super Admin Bypass
-    'super_admin_role' => 'super-admin', // null to disable
+    // Super Admin Settings & Bypass
+    'super_admin' => [
+        'role'       => 'super-admin', // Role slug or null to disable
+        'all_access' => true,          // true / 'all' for full bypass, false/null to require explicit permissions
+    ],
 
     // Middleware settings
     'middleware' => [

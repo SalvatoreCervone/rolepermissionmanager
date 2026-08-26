@@ -284,9 +284,16 @@ trait HasAcl
             return true;
         }
 
-        // Super Admin bypass.
-        if ($this->isSuperAdmin()) {
+        $isSuperAdmin = $this->isSuperAdmin();
+
+        // Super Admin bypass (if enabled).
+        if ($isSuperAdmin && AclRegistry::superAdminHasAllAccess()) {
             return true;
+        }
+
+        // If resource is reserved exclusively for Super Admin
+        if (!empty($rule->is_super_admin_only)) {
+            return $isSuperAdmin;
         }
 
         $requiredPermissions = $rule->permission_slugs ?? [];
@@ -310,13 +317,7 @@ trait HasAcl
      */
     public function isSuperAdmin(): bool
     {
-        $superAdminSlug = config('rolepermissionmanager.super_admin_role');
-
-        if (!$superAdminSlug) {
-            return false;
-        }
-
-        return $this->hasRole($superAdminSlug);
+        return AclRegistry::isSuperAdmin($this);
     }
 
     /**

@@ -100,15 +100,16 @@ class AclRegistry
             return false;
         }
 
-        // Super Admin bypass
-        $superAdminSlug = config('rolepermissionmanager.super_admin_role');
-        if ($superAdminSlug && method_exists($user, 'hasRole') && $user->hasRole($superAdminSlug)) {
+        // Super Admin check
+        $isSuperAdmin = static::isSuperAdmin($user);
+
+        if ($isSuperAdmin && static::superAdminHasAllAccess()) {
             return true;
         }
 
-        // If resource is reserved exclusively for Super Admin, deny non-super-admins
+        // If resource is reserved exclusively for Super Admin, allow if user is super admin, otherwise deny
         if (!empty($rule->is_super_admin_only)) {
-            return false;
+            return $isSuperAdmin;
         }
 
         $requiredPermissions = $rule->permission_slugs ?? [];
@@ -383,8 +384,8 @@ class AclRegistry
             return [];
         }
 
-        // Super Admin bypass: can see everything.
-        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+        // Super Admin bypass: can see everything only if all_access is enabled.
+        if (static::isSuperAdmin($user) && static::superAdminHasAllAccess()) {
             return array_values($menu);
         }
 
@@ -609,6 +610,71 @@ class AclRegistry
             'display_field'     => 'name',
             'secondary_field'   => 'email',
         ];
+    }
+
+    /**
+     * Get the configured Super Admin role slug.
+     */
+    public static function getSuperAdminRole(): ?string
+    {
+        $config = config('rolepermissionmanager.super_admin');
+
+        if (is_array($config)) {
+            return $config['role'] ?? null;
+        }
+
+        if (is_string($config) && $config !== 'all') {
+            return $config;
+        }
+
+        return config('rolepermissionmanager.super_admin_role', 'super-admin');
+    }
+
+    /**
+     * Determine if Super Admin has full unrestricted access to all routes and resources.
+     * If false or null, Super Admin only accesses assigned permissions/roles + super_admin_only resources.
+     */
+    public static function superAdminHasAllAccess(): bool
+    {
+        $config = config('rolepermissionmanager.super_admin');
+
+        if (is_array($config)) {
+            $all = $config['all_access'] ?? $config['all'] ?? $config['bypass'] ?? null;
+            return $all === true || $all === 'all' || $all === 1 || $all === '1';
+        }
+
+        if ($config === 'all' || $config === true) {
+            return true;
+        }
+
+        $legacyBypass = config('rolepermissionmanager.super_admin_bypass');
+        if ($legacyBypass !== null) {
+            return (bool) $legacyBypass;
+        }
+
+        // If explicitly super_admin is null, false, or not providing all_access, return false
+        return false;
+    }
+
+    /**
+     * Check if a given user has the Super Admin role.
+     */
+    public static function isSuperAdmin(mixed $user = null): bool
+    {
+        $guard = config('rolepermissionmanager.middleware.guard');
+        $user = $user ?? auth($guard)->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        $superAdminSlug = static::getSuperAdminRole();
+
+        if (!$superAdminSlug) {
+            return false;
+        }
+
+        return method_exists($user, 'hasRole') && $user->hasRole($superAdminSlug);
     }
 }
 

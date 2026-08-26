@@ -161,8 +161,8 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
     protected function registerGateIntegration(): void
     {
         Gate::before(function ($user, string $ability) {
-            // Super Admin bypass.
-            if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            // Super Admin bypass (if enabled).
+            if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin() && \SalvatoreCervone\RolePermissionManager\Services\AclRegistry::superAdminHasAllAccess()) {
                 return true;
             }
 

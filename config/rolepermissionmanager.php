@@ -111,13 +111,22 @@ return [
     | Super Admin
     |--------------------------------------------------------------------------
     |
-    | Define the super admin role slug. Users with this role bypass all
-    | permission checks automatically.
+    | Configuration for the Super Admin role and bypass behavior.
     |
-    | Set to null to disable the super admin bypass feature.
+    | - 'role': The role slug that identifies Super Admin users (default: 'super-admin').
+    |           Set to null to disable Super Admin handling.
+    | - 'all_access': If true (or 'all'), users with the Super Admin role bypass all
+    |                 permission checks automatically (everything is open).
+    |                 If false, null, or key is omitted, Super Admin can ONLY access
+    |                 routes/resources that are explicitly assigned to their roles/permissions,
+    |                 or routes marked exclusively as 'super_admin_only'.
     |
     */
-    'super_admin_role' => 'super-admin',
+    'super_admin' => [
+        'role' => 'super-admin',
+        'all_access' => true,
+    ],
+    'super_admin_role' => 'super-admin', // Backwards compatibility fallback
 
     /*
     |--------------------------------------------------------------------------

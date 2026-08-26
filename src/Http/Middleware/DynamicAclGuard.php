@@ -74,13 +74,18 @@ class DynamicAclGuard
             throw UnauthorizedException::notLoggedIn();
         }
 
-        // 7. Super Admin bypass.
-        if ($this->isSuperAdmin($user)) {
+        $isSuperAdmin = $this->isSuperAdmin($user);
+
+        // 7. Super Admin bypass (if enabled).
+        if ($isSuperAdmin && AclRegistry::superAdminHasAllAccess()) {
             return $next($request);
         }
 
-        // If the resource is reserved exclusively for Super Admin, deny non-super-admins immediately.
+        // If the resource is reserved exclusively for Super Admin, allow super admin and deny non-super-admins.
         if (!empty($rule->is_super_admin_only)) {
+            if ($isSuperAdmin) {
+                return $next($request);
+            }
             $identifier = $routeName ?? $routeSignature;
             throw UnauthorizedException::forResource($identifier);
         }
@@ -122,18 +127,7 @@ class DynamicAclGuard
      */
     protected function isSuperAdmin($user): bool
     {
-        $superAdminSlug = config('rolepermissionmanager.super_admin_role');
-
-        if (!$superAdminSlug) {
-            return false;
-        }
-
-        // If the user model has the HasAcl trait, use the hasRole method.
-        if (method_exists($user, 'hasRole')) {
-            return $user->hasRole($superAdminSlug);
-        }
-
-        return false;
+        return AclRegistry::isSuperAdmin($user);
     }
 
     /**

@@ -70,8 +70,9 @@ class SimulatorController extends Controller
         $isAllowed = false;
         $verdictReason = '';
 
-        $superAdminRole = config('rolepermissionmanager.super_admin_role', 'super-admin');
-        $isSuperAdmin = method_exists($user, 'hasRole') && $user->hasRole($superAdminRole);
+        $superAdminRole = AclRegistry::getSuperAdminRole() ?? 'super-admin';
+        $isSuperAdmin = AclRegistry::isSuperAdmin($user);
+        $superAdminAllAccess = AclRegistry::superAdminHasAllAccess();
 
         $userRoles = method_exists($user, 'roles') ? $user->roles()->get() : collect();
         $allUserPerms = AclRegistry::getUserPermissions($user);
@@ -104,11 +105,11 @@ class SimulatorController extends Controller
         }
 
         // Step 3: Super Admin check
-        if ($isSuperAdmin) {
+        if ($isSuperAdmin && $superAdminAllAccess) {
             $steps[] = [
                 'name'    => 'Bypass Super Admin',
                 'status'  => 'success',
-                'details' => "L'utente possiede il ruolo Super Admin ('{$superAdminRole}'). Tutti i controlli sono superati.",
+                'details' => "L'utente possiede il ruolo Super Admin ('{$superAdminRole}') con accesso globale abilitato. Tutti i controlli sono superati.",
             ];
             $isAllowed = true;
             $verdictReason = 'Accesso Consentito tramite Bypass Super Admin.';
@@ -117,6 +118,17 @@ class SimulatorController extends Controller
 
         // Step 4: Super Admin Only check
         if ($resource->is_super_admin_only) {
+            if ($isSuperAdmin) {
+                $steps[] = [
+                    'name'    => 'Controllo Esclusiva Super Admin',
+                    'status'  => 'success',
+                    'details' => "La risorsa è riservata ESCLUSIVAMENTE al Super Admin. L'utente possiede il ruolo Super Admin.",
+                ];
+                $isAllowed = true;
+                $verdictReason = 'Accesso Consentito: Risorsa riservata al Super Admin.';
+                return compact('isAllowed', 'verdictReason', 'steps', 'resource', 'userRoles', 'directPerms', 'rolePerms', 'allUserPerms', 'isSuperAdmin');
+            }
+
             $steps[] = [
                 'name'    => 'Controllo Esclusiva Super Admin',
                 'status'  => 'danger',
