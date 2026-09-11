@@ -123,11 +123,7 @@
                             </div>
                         </td>
                         <td style="text-align: right; vertical-align: middle;">
-                            <form action="{{ route('acl.routes.parameter_rules.destroy', [$resource->id, $pRule->id]) }}" method="POST" onsubmit="return confirm('{{ __('acl::routes.confirm_delete_parameter_rule') }}');" style="display: inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" title="{{ __('acl::common.delete') }}">🗑️</button>
-                            </form>
+                            <button type="button" class="btn btn-danger btn-sm" title="{{ __('acl::common.delete') }}" onclick="deleteParamRule('{{ route('acl.routes.parameter_rules.destroy', [$resource->id, $pRule->id]) }}')">🗑️</button>
                         </td>
                     </tr>
                     @endforeach
@@ -271,6 +267,19 @@ function toggleModalSetting(element, inputId) {
         input.value = element.classList.contains('active') ? '1' : '0';
     }
 }
+
+function deleteParamRule(actionUrl) {
+    if (confirm('{{ __('acl::routes.confirm_delete_parameter_rule') }}')) {
+        const form = document.getElementById('deleteParamRuleForm');
+        form.action = actionUrl;
+        form.submit();
+    }
+}
 </script>
+
+<form id="deleteParamRuleForm" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
 @endif
 @endsection
