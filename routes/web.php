@@ -59,6 +59,8 @@ Route::prefix($prefix)
         Route::get('/routes/{id}/edit', [RouteResourceController::class, 'edit'])->name('routes.edit');
         Route::put('/routes/{id}', [RouteResourceController::class, 'update'])->name('routes.update');
         Route::post('/routes/sync', [RouteResourceController::class, 'sync'])->name('routes.sync');
+        Route::post('/routes/{id}/parameter-rules', [RouteResourceController::class, 'storeParameterRule'])->name('routes.parameter_rules.store');
+        Route::delete('/routes/{id}/parameter-rules/{ruleId}', [RouteResourceController::class, 'destroyParameterRule'])->name('routes.parameter_rules.destroy');
 
         // Custom Resources Management (Classes, Methods, UI Elements)
         Route::get('/resources', [SecuredResourceController::class, 'index'])->name('resources.index');

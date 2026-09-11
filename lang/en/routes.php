@@ -68,4 +68,22 @@ return [
     'excluded_by_rule'             => 'Excluded by rule',
     'unmanaged_acl'                => 'Not managed by ACL (Free access)',
     'excluded_cannot_bulk'         => 'Excluded routes cannot be modified via bulk actions',
+
+    // Parameter Rules (Placeholders)
+    'parameter_rules'              => 'Dynamic Parameter Rules (Placeholders)',
+    'parameter_rules_subtitle'     => 'Assign granular permissions based on the actual value of URI parameters (e.g. {page})',
+    'detected_placeholders'        => 'Parameters detected in URI',
+    'unmatched_behavior'           => 'Behavior for unmapped parameter values',
+    'unmatched_behavior_allow'     => 'Inherit base route permissions / pass to controller (Default)',
+    'unmatched_behavior_deny_404'  => '404 Not Found (Block with Page Not Found)',
+    'unmatched_behavior_deny_403'  => '403 Forbidden (Block with Access Denied)',
+    'add_parameter_rule'           => 'Add Parameter Rule',
+    'parameter_name'               => 'Parameter',
+    'parameter_value'              => 'Value',
+    'select_placeholder'           => '— Select Parameter —',
+    'parameter_value_placeholder'  => 'e.g. list, stats, export',
+    'no_parameter_rules'           => 'No specific parameter rules defined. The route will apply the general access settings above.',
+    'parameter_rule_saved'         => 'Parameter rule saved successfully.',
+    'parameter_rule_deleted'       => 'Parameter rule deleted successfully.',
+    'confirm_delete_parameter_rule'=> 'Are you sure you want to delete this parameter rule?',
 ];

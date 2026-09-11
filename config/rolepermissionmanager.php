@@ -31,6 +31,8 @@ return [
         'role_has_permissions' => 'acl_role_has_permissions',
         'permission_has_resources' => 'acl_permission_has_resources',
         'scanner_rules' => 'acl_scanner_rules',
+        'route_parameter_rules' => 'acl_route_parameter_rules',
+        'parameter_rule_has_permissions' => 'acl_parameter_rule_has_permissions',
     ],
 
     /*
@@ -48,6 +50,7 @@ return [
         'permission' => SalvatoreCervone\RolePermissionManager\Models\Permission::class,
         'secured_resource' => SalvatoreCervone\RolePermissionManager\Models\SecuredResource::class,
         'scanner_rule' => SalvatoreCervone\RolePermissionManager\Models\ScannerRule::class,
+        'route_parameter_rule' => SalvatoreCervone\RolePermissionManager\Models\RouteParameterRule::class,
     ],
 
     /*

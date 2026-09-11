@@ -152,10 +152,12 @@ class RouteResourceController extends Controller
      */
     public function edit(int $id)
     {
-        $resource = SecuredResource::routes()->with('permissions')->findOrFail($id);
+        $resource = SecuredResource::routes()->with(['permissions', 'parameterRules.permissions'])->findOrFail($id);
         $allPermissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
+        $placeholders = $resource->getPlaceholders();
+        $parameterRules = $resource->parameterRules;
 
-        return view('acl::routes.edit', compact('resource', 'allPermissions'));
+        return view('acl::routes.edit', compact('resource', 'allPermissions', 'placeholders', 'parameterRules'));
     }
 
     /**
@@ -166,17 +168,19 @@ class RouteResourceController extends Controller
         $resource = SecuredResource::routes()->findOrFail($id);
 
         $validated = $request->validate([
-            'is_public'           => 'boolean',
-            'is_super_admin_only' => 'boolean',
-            'operator'            => 'required|in:OR,AND',
-            'permissions'         => 'nullable|array',
-            'permissions.*'       => 'integer|exists:' . config('rolepermissionmanager.tables.permissions', 'acl_permissions') . ',id',
+            'is_public'                    => 'boolean',
+            'is_super_admin_only'          => 'boolean',
+            'operator'                     => 'required|in:OR,AND',
+            'unmatched_parameter_behavior'  => 'nullable|in:allow,deny_403,deny_404',
+            'permissions'                  => 'nullable|array',
+            'permissions.*'                => 'integer|exists:' . config('rolepermissionmanager.tables.permissions', 'acl_permissions') . ',id',
         ]);
 
         $resource->update([
-            'is_public'           => $validated['is_public'] ?? false,
-            'is_super_admin_only' => $validated['is_super_admin_only'] ?? false,
-            'operator'            => $validated['operator'],
+            'is_public'                    => $validated['is_public'] ?? false,
+            'is_super_admin_only'          => $validated['is_super_admin_only'] ?? false,
+            'operator'                     => $validated['operator'],
+            'unmatched_parameter_behavior'  => $validated['unmatched_parameter_behavior'] ?? 'allow',
         ]);
 
         $resource->permissions()->sync($validated['permissions'] ?? []);
@@ -187,6 +191,65 @@ class RouteResourceController extends Controller
         return redirect()
             ->route('acl.routes.edit', $id)
             ->with('success', __('acl::routes.updated_success', ['identifier' => $resource->identifier]));
+    }
+
+    /**
+     * Store a new parameter rule for a route placeholder.
+     */
+    public function storeParameterRule(Request $request, int $id)
+    {
+        $resource = SecuredResource::routes()->findOrFail($id);
+        $permissionsTable = config('rolepermissionmanager.tables.permissions', 'acl_permissions');
+
+        $validated = $request->validate([
+            'parameter_name'      => 'required|string|max:100',
+            'parameter_value'     => 'required|string|max:255',
+            'is_public'           => 'boolean',
+            'is_super_admin_only' => 'boolean',
+            'operator'            => 'required|in:OR,AND',
+            'permissions'         => 'nullable|array',
+            'permissions.*'       => "integer|exists:{$permissionsTable},id",
+        ]);
+
+        $rule = $resource->parameterRules()->updateOrCreate(
+            [
+                'parameter_name'  => $validated['parameter_name'],
+                'parameter_value' => $validated['parameter_value'],
+            ],
+            [
+                'is_public'           => $validated['is_public'] ?? false,
+                'is_super_admin_only' => $validated['is_super_admin_only'] ?? false,
+                'operator'            => $validated['operator'],
+            ]
+        );
+
+        $rule->permissions()->sync($validated['permissions'] ?? []);
+        AclRegistry::refreshCache();
+
+        AuditLogger::log('route_parameter_rule_saved', 'Route', $resource->identifier, "Saved parameter rule '{$validated['parameter_name']}={$validated['parameter_value']}' on route '{$resource->identifier}'");
+
+        return redirect()
+            ->route('acl.routes.edit', $id)
+            ->with('success', __('acl::routes.parameter_rule_saved'));
+    }
+
+    /**
+     * Delete a parameter rule for a route placeholder.
+     */
+    public function destroyParameterRule(Request $request, int $id, int $ruleId)
+    {
+        $resource = SecuredResource::routes()->findOrFail($id);
+        $rule = $resource->parameterRules()->findOrFail($ruleId);
+        $paramDesc = "{$rule->parameter_name}={$rule->parameter_value}";
+
+        $rule->delete();
+        AclRegistry::refreshCache();
+
+        AuditLogger::log('route_parameter_rule_deleted', 'Route', $resource->identifier, "Deleted parameter rule '{$paramDesc}' on route '{$resource->identifier}'");
+
+        return redirect()
+            ->route('acl.routes.edit', $id)
+            ->with('success', __('acl::routes.parameter_rule_deleted'));
     }
 
     /**

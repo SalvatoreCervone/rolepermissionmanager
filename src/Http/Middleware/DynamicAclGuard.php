@@ -53,7 +53,41 @@ class DynamicAclGuard
             return $next($request);
         }
 
-        // 5. If the resource is marked as public, skip all checks.
+        // 4b. Evaluate Route Parameter / Placeholder Rules (if any)
+        if (!empty($rule->parameter_rules)) {
+            $routeParams = method_exists($route, 'parameters') ? $route->parameters() : [];
+            $matchedParamRule = null;
+            $hasRulesForAnyParam = false;
+
+            foreach ($rule->parameter_rules as $pRule) {
+                $pName = $pRule['parameter_name'];
+                $pValue = (string) ($routeParams[$pName] ?? $request->route($pName) ?? '');
+
+                if ($pValue !== '') {
+                    $hasRulesForAnyParam = true;
+                    if ((string) $pRule['parameter_value'] === $pValue) {
+                        $matchedParamRule = (object) $pRule;
+                        break;
+                    }
+                }
+            }
+
+            if ($matchedParamRule) {
+                $rule = $matchedParamRule;
+            } elseif ($hasRulesForAnyParam) {
+                // Parameter is present in URL, but its value does NOT match any declared parameter rule
+                $unmatchedBehavior = $rule->unmatched_parameter_behavior ?? 'allow';
+                if ($unmatchedBehavior === 'deny_404') {
+                    abort(404, 'Page not found.');
+                }
+                if ($unmatchedBehavior === 'deny_403') {
+                    $identifier = $routeName ?? $routeSignature;
+                    throw UnauthorizedException::forResource($identifier);
+                }
+            }
+        }
+
+        // 5. If the resource (or matched parameter rule) is marked as public, skip all checks.
         if ($rule->is_public) {
             return $next($request);
         }

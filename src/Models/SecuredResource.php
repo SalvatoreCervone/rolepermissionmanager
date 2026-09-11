@@ -45,6 +45,39 @@ class SecuredResource extends Model
         );
     }
 
+    /**
+     * Get the parameter rules defined for this route.
+     */
+    public function parameterRules(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(
+            config('rolepermissionmanager.models.route_parameter_rule', RouteParameterRule::class),
+            'secured_resource_id'
+        );
+    }
+
+    /**
+     * Extract placeholder variable names from the route URI (e.g. ['page', 'destinazione']).
+     */
+    public function getPlaceholders(): array
+    {
+        if (empty($this->uri)) {
+            return [];
+        }
+
+        preg_match_all('/\{([a-zA-Z0-9_]+)\??\}/', $this->uri, $matches);
+
+        return array_values(array_unique($matches[1] ?? []));
+    }
+
+    /**
+     * Check if this route has any dynamic placeholders.
+     */
+    public function hasPlaceholders(): bool
+    {
+        return !empty($this->getPlaceholders());
+    }
+
     public const TYPE_ROUTE = 'route';
     public const TYPE_CUSTOM = 'custom';
 

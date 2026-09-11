@@ -187,7 +187,7 @@ class AclRegistry
             SecuredResource::class
         );
 
-        $resources = $resourceModel::with('permissions')
+        $resources = $resourceModel::with(['permissions', 'parameterRules.permissions'])
             ->where('is_deprecated', false)
             ->get();
 
@@ -195,10 +195,23 @@ class AclRegistry
 
         foreach ($resources as $resource) {
             $entry = [
-                'is_public'           => $resource->is_public,
-                'is_super_admin_only' => (bool) $resource->is_super_admin_only,
-                'operator'            => $resource->operator,
-                'permission_slugs'    => $resource->permissions->pluck('slug')->all(),
+                'id'                           => $resource->id,
+                'is_public'                    => $resource->is_public,
+                'is_super_admin_only'          => (bool) $resource->is_super_admin_only,
+                'operator'                     => $resource->operator,
+                'permission_slugs'             => $resource->permissions->pluck('slug')->all(),
+                'unmatched_parameter_behavior'  => $resource->unmatched_parameter_behavior ?? 'allow',
+                'parameter_rules'              => $resource->parameterRules ? $resource->parameterRules->map(function ($pr) {
+                    return [
+                        'id'                  => $pr->id,
+                        'parameter_name'      => $pr->parameter_name,
+                        'parameter_value'     => $pr->parameter_value,
+                        'is_public'           => (bool) $pr->is_public,
+                        'is_super_admin_only' => (bool) $pr->is_super_admin_only,
+                        'operator'            => $pr->operator ?? 'OR',
+                        'permission_slugs'    => $pr->permissions->pluck('slug')->all(),
+                    ];
+                })->all() : [],
             ];
 
             $map[$resource->identifier] = $entry;

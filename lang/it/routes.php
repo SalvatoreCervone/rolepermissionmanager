@@ -68,4 +68,22 @@ return [
     'excluded_by_rule'             => 'Esclusa da regola',
     'unmanaged_acl'                => 'Non gestita da ACL (Accesso libero)',
     'excluded_cannot_bulk'         => 'Le rotte escluse non possono essere modificate con azioni massive',
+
+    // Parameter Rules (Placeholders)
+    'parameter_rules'              => 'Regole Parametri Dinamici (Placeholders)',
+    'parameter_rules_subtitle'     => 'Assegna permessi granulari in base al valore effettivo dei parametri presenti nell\'URI (es. {page})',
+    'detected_placeholders'        => 'Parametri rilevati nell\'URI',
+    'unmatched_behavior'           => 'Comportamento per valori non mappati',
+    'unmatched_behavior_allow'     => 'Eredita permessi della rotta principale / passa al controller (Predefinito)',
+    'unmatched_behavior_deny_404'  => '404 Not Found (Blocca con Pagina non trovata)',
+    'unmatched_behavior_deny_403'  => '403 Forbidden (Blocca con Accesso negato)',
+    'add_parameter_rule'           => 'Aggiungi Regola Parametro',
+    'parameter_name'               => 'Parametro',
+    'parameter_value'              => 'Valore',
+    'select_placeholder'           => '— Seleziona Parametro —',
+    'parameter_value_placeholder'  => 'es. elenco, statistiche, export',
+    'no_parameter_rules'           => 'Nessuna regola specifica per parametro definita. La rotta applicherà le impostazioni di accesso generali sopra indicate.',
+    'parameter_rule_saved'         => 'Regola parametro salvata con successo.',
+    'parameter_rule_deleted'       => 'Regola parametro eliminata con successo.',
+    'confirm_delete_parameter_rule'=> 'Sei sicuro di voler eliminare questa regola per il parametro?',
 ];
