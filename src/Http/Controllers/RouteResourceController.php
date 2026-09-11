@@ -24,63 +24,24 @@ class RouteResourceController extends Controller
         $perPage = $perPageParam === 'all' ? 10000 : (in_array((int)$perPageParam, [25, 50, 100]) ? (int)$perPageParam : $defaultPerPage);
         $status = $request->get('status');
 
-        // Handle Skipped / Excluded routes view
-        if ($status === 'skipped') {
-            /** @var RouteScanner $scanner */
-            $scanner = app(RouteScanner::class);
-            $allSkipped = $scanner->getSkippedRoutes();
-
-            if ($request->filled('method')) {
-                $method = $request->get('method');
-                $allSkipped = $allSkipped->where('method', $method);
-            }
-
-            if ($request->filled('file')) {
-                $file = $request->get('file');
-                $allSkipped = $allSkipped->where('source_file', $file);
-            }
-
-            if ($request->filled('search')) {
-                $search = strtolower($request->get('search'));
-                $allSkipped = $allSkipped->filter(function ($item) use ($search) {
-                    return str_contains(strtolower($item->identifier), $search)
-                        || str_contains(strtolower($item->uri), $search)
-                        || str_contains(strtolower($item->controller_action), $search)
-                        || str_contains(strtolower($item->source_file ?? ''), $search)
-                        || str_contains(strtolower($item->reason), $search);
-                });
-            }
-
-            $page = (int) $request->get('page', 1);
-            $total = $allSkipped->count();
-            $items = $allSkipped->slice(($page - 1) * $perPage, $perPage)->values();
-
-            $routes = new LengthAwarePaginator(
-                $items,
-                $total,
-                $perPage,
-                $page,
-                ['path' => $request->url(), 'query' => $request->query()]
-            );
-
-            $methods = $scanner->getSkippedRoutes()->pluck('method')->unique()->sort();
-            $routeFiles = $scanner->getSkippedRoutes()->pluck('source_file')->filter()->unique()->sort();
-            $isSkipped = true;
-
-            return view('acl::routes.index', compact('routes', 'methods', 'routeFiles', 'isSkipped'));
-        }
+        /** @var RouteScanner $scanner */
+        $scanner = app(RouteScanner::class);
+        $allSkipped = $scanner->getSkippedRoutes();
+        $managedCount = SecuredResource::routes()->count();
+        $skippedCount = $allSkipped->count();
+        $totalCount = $managedCount + $skippedCount;
 
         $query = SecuredResource::routes()->with('permissions')->orderBy('identifier');
 
-        // Filters
+        // Filters on DB query
         if ($request->filled('method')) {
             $query->where('method', $request->get('method'));
         }
         if ($request->filled('file')) {
             $query->where('source_file', $request->get('file'));
         }
-        if ($request->filled('status')) {
-            match ($request->get('status')) {
+        if ($request->filled('status') && in_array($status, ['public', 'protected', 'super_admin', 'deprecated'])) {
+            match ($status) {
                 'public'      => $query->public()->active(),
                 'protected'   => $query->protected()->notSuperAdminOnly()->active(),
                 'super_admin' => $query->superAdminOnly()->active(),
@@ -111,13 +72,79 @@ class RouteResourceController extends Controller
             });
         }
 
-        $routes = $query->paginate($perPage)->appends($request->query());
-        $methods = SecuredResource::routes()->whereNotNull('method')->distinct()->pluck('method')->sort();
-        $routeFiles = SecuredResource::routes()->whereNotNull('source_file')->distinct()->pluck('source_file')->sort();
-        $allPermissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
-        $isSkipped = false;
+        // Filter skipped routes collection
+        $filteredSkipped = $allSkipped;
+        if ($request->filled('method')) {
+            $filteredSkipped = $filteredSkipped->where('method', $request->get('method'));
+        }
+        if ($request->filled('file')) {
+            $filteredSkipped = $filteredSkipped->where('source_file', $request->get('file'));
+        }
+        if ($request->filled('search')) {
+            $search = strtolower($request->get('search'));
+            $filteredSkipped = $filteredSkipped->filter(function ($item) use ($search) {
+                return str_contains(strtolower($item->identifier), $search)
+                    || str_contains(strtolower($item->uri), $search)
+                    || str_contains(strtolower($item->controller_action), $search)
+                    || str_contains(strtolower($item->source_file ?? ''), $search)
+                    || str_contains(strtolower($item->reason), $search);
+            });
+        }
+        if ($request->filled('permission') && $request->get('permission') !== 'none') {
+            // Skipped routes don't have assigned permissions
+            $filteredSkipped = collect();
+        }
 
-        return view('acl::routes.index', compact('routes', 'methods', 'routeFiles', 'allPermissions', 'isSkipped'));
+        $page = (int) $request->get('page', 1);
+
+        if ($status === 'skipped') {
+            $isSkipped = true;
+            $total = $filteredSkipped->count();
+            $items = $filteredSkipped->slice(($page - 1) * $perPage, $perPage)->values();
+
+            $routes = new LengthAwarePaginator(
+                $items,
+                $total,
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        } elseif ($status === 'managed' || in_array($status, ['public', 'protected', 'super_admin', 'deprecated'])) {
+            $isSkipped = false;
+            $routes = $query->paginate($perPage)->appends($request->query());
+        } else {
+            // Unified 'all' (default): merge DB routes and filtered skipped routes
+            $isSkipped = false;
+            $dbRoutes = $query->get();
+            $combined = $dbRoutes->concat($filteredSkipped)->sortBy('identifier')->values();
+
+            $total = $combined->count();
+            $items = $combined->slice(($page - 1) * $perPage, $perPage)->values();
+
+            $routes = new LengthAwarePaginator(
+                $items,
+                $total,
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        }
+
+        $methods = SecuredResource::routes()->whereNotNull('method')->pluck('method')->merge($allSkipped->pluck('method'))->unique()->sort()->values();
+        $routeFiles = SecuredResource::routes()->whereNotNull('source_file')->pluck('source_file')->merge($allSkipped->pluck('source_file')->filter())->unique()->sort()->values();
+        $allPermissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
+
+        return view('acl::routes.index', compact(
+            'routes',
+            'methods',
+            'routeFiles',
+            'allPermissions',
+            'isSkipped',
+            'managedCount',
+            'skippedCount',
+            'totalCount',
+            'status'
+        ));
     }
 
     /**

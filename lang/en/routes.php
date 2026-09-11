@@ -59,4 +59,13 @@ return [
     'select_permissions_to_apply' => 'Select permissions to apply to chosen routes:',
     'confirm_bulk_action'          => 'Are you sure you want to apply this bulk action to all selected routes?',
     'bulk_updated_success'         => ':count routes updated successfully.',
+
+    // Tabs & Excluded badges
+    'tab_all'                      => 'All Routes',
+    'tab_managed'                  => 'ACL Managed',
+    'tab_excluded'                 => 'Excluded by Config / Rules',
+    'excluded_by_config'           => 'Excluded by config',
+    'excluded_by_rule'             => 'Excluded by rule',
+    'unmanaged_acl'                => 'Not managed by ACL (Free access)',
+    'excluded_cannot_bulk'         => 'Excluded routes cannot be modified via bulk actions',
 ];

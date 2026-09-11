@@ -226,6 +226,34 @@ class RouteScanner
     }
 
     /**
+     * Determine whether the exclusion comes from a dynamic DB rule or from config.
+     */
+    public function getExclusionType(Route $route): string
+    {
+        $name = $route->getName();
+        $uri = $route->uri();
+        $dynamicRules = AclRegistry::getScannerRules();
+
+        if ($name) {
+            foreach ($dynamicRules['excludes']['names'] as $pattern) {
+                if (Str::is($pattern, $name)) {
+                    return 'rule';
+                }
+            }
+        }
+
+        foreach ($dynamicRules['excludes']['prefixes'] as $prefix) {
+            $cleanPrefix = trim($prefix, '/');
+            $cleanUri = trim($uri, '/');
+            if ($cleanUri === $cleanPrefix || Str::startsWith($cleanUri, $cleanPrefix . '/') || Str::is($prefix, $uri)) {
+                return 'rule';
+            }
+        }
+
+        return 'config';
+    }
+
+    /**
      * Get all skipped routes with their details and exclusion reasons.
      *
      * @return \Illuminate\Support\Collection
@@ -236,7 +264,24 @@ class RouteScanner
         $routes = $this->router->getRoutes()->getRoutes();
         $skipped = collect();
 
+        $adminPrefix = trim((string) config('rolepermissionmanager.admin_panel.prefix', 'acl-admin'), '/');
+        $apiPrefix = trim((string) config('rolepermissionmanager.api.prefix', 'acl-api'), '/');
+
         foreach ($routes as $route) {
+            $uri = trim($route->uri(), '/');
+            $name = (string) $route->getName();
+
+            // Exclude package internal routes (admin panel & API) and testbench internals
+            if (($adminPrefix && ($uri === $adminPrefix || Str::startsWith($uri, $adminPrefix . '/'))) || Str::startsWith($name, 'acl.')) {
+                continue;
+            }
+            if (($apiPrefix && ($uri === $apiPrefix || Str::startsWith($uri, $apiPrefix . '/'))) || Str::startsWith($name, 'acl.api.')) {
+                continue;
+            }
+            if (Str::startsWith($uri, '_workbench') || Str::startsWith($name, 'workbench.')) {
+                continue;
+            }
+
             $reason = $this->getExclusionReason($route);
             if ($reason !== null) {
                 $methods = $route->methods();
@@ -246,13 +291,20 @@ class RouteScanner
                 }
 
                 $skipped->push((object) [
-                    'identifier'        => $this->resolveIdentifier($route),
-                    'method'            => $primaryMethod,
-                    'uri'               => $route->uri(),
-                    'controller_action' => $this->resolveControllerAction($route),
-                    'source_file'       => $this->resolveSourceFile($route),
-                    'reason'            => $reason,
-                    'is_skipped'        => true,
+                    'id'                  => null,
+                    'identifier'          => $this->resolveIdentifier($route),
+                    'method'              => $primaryMethod,
+                    'uri'                 => $route->uri(),
+                    'controller_action'   => $this->resolveControllerAction($route),
+                    'source_file'         => $this->resolveSourceFile($route),
+                    'reason'              => $reason,
+                    'exclusion_type'      => $this->getExclusionType($route),
+                    'is_skipped'          => true,
+                    'is_deprecated'       => false,
+                    'is_super_admin_only' => false,
+                    'is_public'           => false,
+                    'permissions'         => collect(),
+                    'operator'            => '—',
                 ]);
             }
         }

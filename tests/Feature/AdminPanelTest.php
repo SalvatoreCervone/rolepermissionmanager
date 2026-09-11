@@ -112,10 +112,57 @@ class AdminPanelTest extends TestCase
 
     public function test_routes_index_can_filter_by_skipped_status(): void
     {
+        \Illuminate\Support\Facades\Route::get('/login', fn() => 'login')->name('login');
+
         $response = $this->get('/acl-admin/routes?status=skipped');
 
         $response->assertStatus(200);
-        $response->assertSee('Ignored / Excluded');
+        $response->assertSee('Excluded by config');
+        $response->assertSee('login');
+    }
+
+    public function test_routes_index_displays_excluded_login_route_with_config_badge(): void
+    {
+        \Illuminate\Support\Facades\Route::get('/login', fn() => 'login')->name('login');
+
+        $response = $this->get('/acl-admin/routes');
+
+        $response->assertStatus(200);
+        $response->assertSee('login');
+        $response->assertSee('Excluded by config');
+        $response->assertSee('Excluded route name: login');
+    }
+
+    public function test_routes_index_can_search_for_excluded_route(): void
+    {
+        \Illuminate\Support\Facades\Route::get('/login', fn() => 'login')->name('login');
+
+        $response = $this->get('/acl-admin/routes?search=login');
+
+        $response->assertStatus(200);
+        $response->assertSee('login');
+        $response->assertSee('Excluded by config');
+    }
+
+    public function test_routes_index_managed_status_filters_out_excluded_routes(): void
+    {
+        \Illuminate\Support\Facades\Route::get('/login', fn() => 'login')->name('login');
+
+        SecuredResource::create([
+            'identifier'        => 'orders.index',
+            'type'              => SecuredResource::TYPE_ROUTE,
+            'controller_action' => 'OrderController@index',
+            'method'            => 'GET',
+            'uri'               => 'api/orders',
+            'is_public'         => false,
+            'operator'          => 'OR',
+        ]);
+
+        $response = $this->get('/acl-admin/routes?status=managed');
+
+        $response->assertStatus(200);
+        $response->assertSee('orders.index');
+        $response->assertDontSee('Excluded route name: login');
     }
 
     public function test_routes_index_supports_custom_per_page(): void

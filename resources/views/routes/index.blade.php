@@ -12,6 +12,36 @@
     </form>
 </div>
 
+{{-- Tabs Navigation --}}
+@php
+    $currentStatus = request('status', '');
+@endphp
+<div class="tabs-nav" style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+    <a href="{{ route('acl.routes.index', array_merge(request()->except('status', 'page'), ['status' => ''])) }}" 
+       class="btn {{ ($currentStatus === '' || $currentStatus === 'all') ? 'btn-primary' : 'btn-secondary' }} btn-sm"
+       style="display: inline-flex; align-items: center; gap: 6px;">
+        <span>🌐</span>
+        <span>{{ __('acl::routes.tab_all') }}</span>
+        <span class="badge" style="background: rgba(255,255,255,0.2); font-size: 11px; padding: 2px 6px; border-radius: 10px;">{{ $totalCount ?? 0 }}</span>
+    </a>
+
+    <a href="{{ route('acl.routes.index', array_merge(request()->except('status', 'page'), ['status' => 'managed'])) }}" 
+       class="btn {{ $currentStatus === 'managed' ? 'btn-primary' : 'btn-secondary' }} btn-sm"
+       style="display: inline-flex; align-items: center; gap: 6px;">
+        <span>🛡️</span>
+        <span>{{ __('acl::routes.tab_managed') }}</span>
+        <span class="badge" style="background: rgba(255,255,255,0.2); font-size: 11px; padding: 2px 6px; border-radius: 10px;">{{ $managedCount ?? 0 }}</span>
+    </a>
+
+    <a href="{{ route('acl.routes.index', array_merge(request()->except('status', 'page'), ['status' => 'skipped'])) }}" 
+       class="btn {{ $currentStatus === 'skipped' ? 'btn-primary' : 'btn-secondary' }} btn-sm"
+       style="display: inline-flex; align-items: center; gap: 6px;">
+        <span>⏭️</span>
+        <span>{{ __('acl::routes.tab_excluded') }}</span>
+        <span class="badge" style="background: rgba(255,255,255,0.2); font-size: 11px; padding: 2px 6px; border-radius: 10px;">{{ $skippedCount ?? 0 }}</span>
+    </a>
+</div>
+
 {{-- Bulk Action Bar (Visible when routes are selected) --}}
 @if(!$isSkipped)
 <div id="bulkActionBar" style="display: none; background: var(--bg-card); border: 1px solid var(--accent); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
@@ -103,8 +133,9 @@
         </select>
         <select name="status" class="form-control" onchange="this.form.submit()">
             <option value="">{{ __('acl::routes.all_status') }}</option>
+            <option value="managed" {{ request('status') === 'managed' ? 'selected' : '' }}>🛡️ {{ __('acl::routes.tab_managed') }}</option>
             <option value="public" {{ request('status') === 'public' ? 'selected' : '' }}>🌐 {{ __('acl::routes.public') }}</option>
-            <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🛡️ {{ __('acl::routes.protected') }}</option>
+            <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🔒 {{ __('acl::routes.protected') }}</option>
             <option value="super_admin" {{ request('status') === 'super_admin' ? 'selected' : '' }}>👑 {{ __('acl::routes.super_admin') }}</option>
             <option value="deprecated" {{ request('status') === 'deprecated' ? 'selected' : '' }}>📦 {{ __('acl::routes.deprecated') }}</option>
             <option value="skipped" {{ request('status') === 'skipped' ? 'selected' : '' }}>⏭️ {{ __('acl::routes.skipped') }}</option>
@@ -165,7 +196,9 @@
                                     <span class="badge badge-{{ strtolower($route->method ?? 'get') }}">{{ $route->method }}</span>
                                     <strong style="font-size: 14px; color: var(--text-primary); font-family: 'JetBrains Mono', 'Fira Code', monospace;">{{ $route->identifier }}</strong>
                                 </div>
-                                <span class="badge" style="background: var(--warning-subtle); color: var(--warning);">{{ __('acl::routes.skipped') }}</span>
+                                <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                                    🚫 {{ ($route->exclusion_type ?? 'config') === 'rule' ? __('acl::routes.excluded_by_rule') : __('acl::routes.excluded_by_config') }}
+                                </span>
                             </div>
 
                             {{-- Line 2: URI + Controller Action + Source File --}}
@@ -223,9 +256,13 @@
                 </thead>
                 <tbody>
                     @foreach($routes as $route)
-                    <tr style="{{ $route->is_deprecated ? 'opacity: 0.5;' : '' }}">
+                    <tr style="{{ ($route->is_deprecated ?? false) ? 'opacity: 0.5;' : '' }}">
                         <td style="text-align: center; vertical-align: top; padding-top: 14px;">
-                            <input type="checkbox" class="route-select-cb" value="{{ $route->id }}" data-identifier="{{ $route->identifier }}">
+                            @if($route->is_skipped ?? false)
+                                <input type="checkbox" disabled title="{{ __('acl::routes.excluded_cannot_bulk') }}" style="opacity: 0.25; cursor: not-allowed;">
+                            @else
+                                <input type="checkbox" class="route-select-cb" value="{{ $route->id }}" data-identifier="{{ $route->identifier }}">
+                            @endif
                         </td>
                         <td style="vertical-align: top; padding: 12px 16px;">
                             {{-- Line 1: Method badge + Identifier (bold) + Status & Operator badges --}}
@@ -236,7 +273,11 @@
                                 </div>
 
                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                    @if($route->is_deprecated)
+                                    @if($route->is_skipped ?? false)
+                                        <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                                            🚫 {{ ($route->exclusion_type ?? 'config') === 'rule' ? __('acl::routes.excluded_by_rule') : __('acl::routes.excluded_by_config') }}
+                                        </span>
+                                    @elseif($route->is_deprecated)
                                         <span class="badge badge-deprecated">{{ __('acl::routes.deprecated') }}</span>
                                     @elseif($route->is_super_admin_only)
                                         <span class="badge" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">👑 {{ __('acl::routes.super_admin') }}</span>
@@ -275,23 +316,40 @@
                                         </span>
                                     </div>
                                 @endif
+
+                                @if($route->is_skipped ?? false)
+                                    <div style="display: flex; align-items: center; gap: 5px; color: var(--warning);">
+                                        <span>⚠️</span>
+                                        <span style="font-size: 11px;">{{ __('acl::routes.exclusion_reason') }}: <code>{{ $route->reason }}</code></span>
+                                    </div>
+                                @endif
                             </div>
                         </td>
 
                         <td style="vertical-align: middle;">
-                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                @forelse($route->permissions as $perm)
-                                    <span class="chip">{{ $perm->slug }}</span>
-                                @empty
-                                    <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25); color: #eab308; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 500;">
-                                        ⚠️ {{ __('acl::routes.no_permissions') }}
-                                    </span>
-                                @endforelse
-                            </div>
+                            @if($route->is_skipped ?? false)
+                                <span style="display: inline-flex; align-items: center; gap: 5px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: var(--text-muted); border-radius: 4px; padding: 3px 8px; font-size: 11px;">
+                                    <span>ℹ️</span> {{ __('acl::routes.unmanaged_acl') }}
+                                </span>
+                            @else
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    @forelse($route->permissions as $perm)
+                                        <span class="chip">{{ $perm->slug }}</span>
+                                    @empty
+                                        <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25); color: #eab308; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 500;">
+                                            ⚠️ {{ __('acl::routes.no_permissions') }}
+                                        </span>
+                                    @endforelse
+                                </div>
+                            @endif
                         </td>
 
                         <td style="text-align: right; vertical-align: middle;">
-                            <a href="{{ route('acl.routes.edit', $route->id) }}" class="btn btn-secondary btn-sm">⚙️ {{ __('acl::routes.configure') }}</a>
+                            @if($route->is_skipped ?? false)
+                                <a href="{{ route('acl.scanner_rules.index') }}" class="btn btn-secondary btn-sm" title="{{ __('acl::routes.manage_rules') }}">⚙️ {{ __('acl::nav.scanner_rules') }}</a>
+                            @else
+                                <a href="{{ route('acl.routes.edit', $route->id) }}" class="btn btn-secondary btn-sm">⚙️ {{ __('acl::routes.configure') }}</a>
+                            @endif
                         </td>
                     </tr>
                     @endforeach
@@ -306,7 +364,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const selectAll = document.getElementById('selectAllRoutes');
-    const routeCheckboxes = document.querySelectorAll('.route-select-cb');
+    const routeCheckboxes = document.querySelectorAll('.route-select-cb:not(:disabled)');
     const bulkBar = document.getElementById('bulkActionBar');
     const selectedCount = document.getElementById('selectedCount');
     const bulkHiddenIds = document.getElementById('bulkHiddenIds');
@@ -342,7 +400,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (selectAll) {
         selectAll.addEventListener('change', function() {
-            routeCheckboxes.forEach(cb => cb.checked = selectAll.checked);
+            routeCheckboxes.forEach(cb => {
+                if (!cb.disabled) cb.checked = selectAll.checked;
+            });
             updateBulkState();
         });
     }

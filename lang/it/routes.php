@@ -59,4 +59,13 @@ return [
     'select_permissions_to_apply' => 'Seleziona i permessi da applicare alle rotte scelte:',
     'confirm_bulk_action'          => 'Sei sicuro di voler applicare questa azione a tutte le rotte selezionate?',
     'bulk_updated_success'         => ':count rotte aggiornate con successo.',
+
+    // Tabs & Excluded badges
+    'tab_all'                      => 'Tutte le Rotte',
+    'tab_managed'                  => 'Gestite da ACL',
+    'tab_excluded'                 => 'Escluse da Config / Regole',
+    'excluded_by_config'           => 'Esclusa da config',
+    'excluded_by_rule'             => 'Esclusa da regola',
+    'unmanaged_acl'                => 'Non gestita da ACL (Accesso libero)',
+    'excluded_cannot_bulk'         => 'Le rotte escluse non possono essere modificate con azioni massive',
 ];
