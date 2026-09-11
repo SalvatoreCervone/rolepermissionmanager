@@ -331,4 +331,80 @@ class RouteParameterRulesTest extends TestCase
         $response->assertSee('elenco');
         $response->assertSee('404 Not Found');
     }
+
+    public function test_can_access_route_and_filter_menu_evaluates_parameter_rules(): void
+    {
+        $resource = SecuredResource::create([
+            'identifier'                   => 'serversegnalazioni.gotopage',
+            'type'                         => SecuredResource::TYPE_ROUTE,
+            'controller_action'            => 'JwtauthController@gotopage',
+            'method'                       => 'GET',
+            'uri'                          => 'serversegnalazioni/{page}/{destinazione}',
+            'is_public'                    => false,
+            'unmatched_parameter_behavior' => 'deny_404',
+            'operator'                     => 'OR',
+        ]);
+
+        $permLeggi = Permission::create(['name' => 'Leggi', 'slug' => 'segnalazione.leggi', 'module' => 'Segnalazioni']);
+        $permScrivi = Permission::create(['name' => 'Scrivi', 'slug' => 'segnalazione.scrivi', 'module' => 'Segnalazioni']);
+
+        $ruleLeggi = $resource->parameterRules()->create([
+            'parameter_name'  => 'page',
+            'parameter_value' => 'visualizzasegnalazioni',
+            'operator'        => 'OR',
+        ]);
+        $ruleLeggi->permissions()->attach($permLeggi->id);
+
+        $ruleScrivi = $resource->parameterRules()->create([
+            'parameter_name'  => 'page',
+            'parameter_value' => 'inseriscisegnalazioni',
+            'operator'        => 'OR',
+        ]);
+        $ruleScrivi->permissions()->attach($permScrivi->id);
+
+        AclRegistry::refreshCache();
+
+        // User with ONLY 'segnalazione.leggi'
+        $reader = User::create(['name' => 'Reader', 'email' => 'reader@test.com', 'password' => bcrypt('password')]);
+        $reader->givePermissionTo('segnalazione.leggi');
+
+        // User with NO permissions
+        $guest = User::create(['name' => 'No Perms', 'email' => 'noperms@test.com', 'password' => bcrypt('password')]);
+
+        // 1. Direct canAccessRoute assertions
+        $this->assertTrue($reader->canAccessRoute('/serversegnalazioni/visualizzasegnalazioni/segnalazioni'));
+        $this->assertFalse($reader->canAccessRoute('/serversegnalazioni/inseriscisegnalazioni/segnalazioni'));
+        $this->assertFalse($reader->canAccessRoute('/serversegnalazioni/inesistente/segnalazioni'));
+
+        $this->assertFalse($guest->canAccessRoute('/serversegnalazioni/visualizzasegnalazioni/segnalazioni'));
+        $this->assertFalse($guest->canAccessRoute('/serversegnalazioni/inseriscisegnalazioni/segnalazioni'));
+
+        // 2. Navigation Menu filtering test
+        $menu = [
+            [
+                'label' => 'Segnalazioni',
+                'icon'  => 'pi pi-fw pi-admin',
+                'items' => [
+                    [
+                        'label' => 'Visualizza',
+                        'url'   => '/serversegnalazioni/visualizzasegnalazioni/segnalazioni',
+                    ],
+                    [
+                        'label' => 'Inserisci',
+                        'url'   => '/serversegnalazioni/inseriscisegnalazioni/segnalazioni',
+                    ],
+                ],
+            ],
+        ];
+
+        // Reader sees only 'Visualizza'
+        $readerMenu = AclRegistry::filterMenu($menu, $reader);
+        $this->assertCount(1, $readerMenu);
+        $this->assertCount(1, $readerMenu[0]['items']);
+        $this->assertEquals('Visualizza', $readerMenu[0]['items'][0]['label']);
+
+        // User with no permissions sees 0 menu items (parent is dropped because all children are inaccessible)
+        $guestMenu = AclRegistry::filterMenu($menu, $guest);
+        $this->assertCount(0, $guestMenu);
+    }
 }

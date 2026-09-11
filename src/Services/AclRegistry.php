@@ -80,6 +80,13 @@ class AclRegistry
      */
     public static function hasAccess(string $identifier, mixed $user = null): bool
     {
+        $guard = config('rolepermissionmanager.middleware.guard');
+        $user = $user ?? auth($guard)->user();
+
+        if ($user && method_exists($user, 'canAccessRoute')) {
+            return $user->canAccessRoute($identifier);
+        }
+
         $rule = static::getResourceRule($identifier);
 
         // If not registered in ACL system
@@ -92,9 +99,6 @@ class AclRegistry
         if ($rule->is_public) {
             return true;
         }
-
-        $guard = config('rolepermissionmanager.middleware.guard');
-        $user = $user ?? auth($guard)->user();
 
         if (!$user) {
             return false;

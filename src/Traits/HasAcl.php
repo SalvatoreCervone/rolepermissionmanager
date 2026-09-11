@@ -256,20 +256,32 @@ trait HasAcl
     {
         $clean = trim($routeNameOrSignature, '/');
 
+        $matchedParams = [];
+
         // 1. Try direct registry lookup by identifier or GET:uri signature
         $rule = AclRegistry::getResourceRule($routeNameOrSignature, $routeNameOrSignature)
             ?? AclRegistry::getResourceRule($clean, 'GET:' . $clean)
             ?? AclRegistry::getResourceRule('GET:' . $clean, $clean);
 
-        // 2. Try matching through the Laravel Router if route path was given (e.g. '/ricercacorsi')
-        if (!$rule && function_exists('app') && app()->bound('router')) {
+        // 2. Try matching through the Laravel Router if route path was given (e.g. '/ricercacorsi' or '/serversegnalazioni/visualizza/1')
+        if (function_exists('app') && app()->bound('router')) {
             try {
-                $request = \Illuminate\Http\Request::create($routeNameOrSignature, 'GET');
+                $method = 'GET';
+                $path = $routeNameOrSignature;
+                if (preg_match('/^(GET|POST|PUT|PATCH|DELETE):(.*)$/i', $routeNameOrSignature, $m)) {
+                    $method = strtoupper($m[1]);
+                    $path = $m[2];
+                }
+
+                $request = \Illuminate\Http\Request::create($path, $method);
                 $matched = app('router')->getRoutes()->match($request);
                 if ($matched) {
-                    $name = $matched->getName();
-                    $sig = ($matched->methods()[0] ?? 'GET') . ':' . $matched->uri();
-                    $rule = AclRegistry::getResourceRule($name, $sig);
+                    $matchedParams = method_exists($matched, 'parameters') ? $matched->parameters() : [];
+                    if (!$rule) {
+                        $name = $matched->getName();
+                        $sig = ($matched->methods()[0] ?? 'GET') . ':' . $matched->uri();
+                        $rule = AclRegistry::getResourceRule($name, $sig);
+                    }
                 }
             } catch (\Throwable $e) {
                 // Route could not be matched by router
@@ -278,6 +290,35 @@ trait HasAcl
 
         if (!$rule) {
             return true; // Route is not ACL-managed.
+        }
+
+        // 3. Evaluate Route Parameter / Placeholder Rules (if any)
+        if (!empty($rule->parameter_rules)) {
+            $matchedParamRule = null;
+            $hasRulesForAnyParam = false;
+
+            foreach ($rule->parameter_rules as $pRule) {
+                $pName = $pRule['parameter_name'];
+                $pValue = (string) ($matchedParams[$pName] ?? '');
+
+                if ($pValue !== '') {
+                    $hasRulesForAnyParam = true;
+                    if ((string) $pRule['parameter_value'] === $pValue) {
+                        $matchedParamRule = (object) $pRule;
+                        break;
+                    }
+                }
+            }
+
+            if ($matchedParamRule) {
+                $rule = $matchedParamRule;
+            } elseif ($hasRulesForAnyParam) {
+                // Parameter is present in URL, but its value does NOT match any declared parameter rule
+                $unmatchedBehavior = $rule->unmatched_parameter_behavior ?? 'allow';
+                if (in_array($unmatchedBehavior, ['deny_404', 'deny_403'], true)) {
+                    return false;
+                }
+            }
         }
 
         if ($rule->is_public) {
