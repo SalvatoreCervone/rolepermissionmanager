@@ -16,6 +16,7 @@ class SecuredResource extends Model
         'is_public'           => 'boolean',
         'is_super_admin_only' => 'boolean',
         'is_deprecated'       => 'boolean',
+        'is_unconfigured'     => 'boolean',
     ];
 
     /**
@@ -157,6 +158,32 @@ class SecuredResource extends Model
         return $query->where(function ($q) {
             $q->where('is_super_admin_only', false)->orWhereNull('is_super_admin_only');
         });
+    }
+
+    /**
+     * Scope to unconfigured (pending/locked) resources.
+     */
+    public function scopeUnconfigured($query)
+    {
+        return $query->where('is_unconfigured', true);
+    }
+
+    /**
+     * Scope to configured resources.
+     */
+    public function scopeConfigured($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('is_unconfigured', false)->orWhereNull('is_unconfigured');
+        });
+    }
+
+    /**
+     * Check if this resource is unconfigured and locked.
+     */
+    public function isUnconfigured(): bool
+    {
+        return (bool) $this->is_unconfigured;
     }
 
     /**

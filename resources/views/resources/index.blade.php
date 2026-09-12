@@ -87,11 +87,27 @@
     </div>
 </div>
 
+@if(isset($unconfiguredCount) && $unconfiguredCount > 0)
+<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 24px;">🚨</span>
+        <div>
+            <strong style="color: #ef4444; font-size: 15px;">{{ __('acl::resources.unconfigured_alert_title', ['count' => $unconfiguredCount]) }}</strong>
+            <p style="margin: 2px 0 0; font-size: 13px; color: var(--text-muted);">{{ __('acl::resources.unconfigured_alert_desc') }}</p>
+        </div>
+    </div>
+    <a href="{{ route('acl.resources.index', ['status' => 'unconfigured']) }}" class="btn btn-sm" style="background: #ef4444; color: #fff; text-decoration: none; white-space: nowrap; padding: 6px 14px; border-radius: 6px; font-weight: 500;">
+        🔒 {{ __('acl::resources.view_unconfigured') }} ({{ $unconfiguredCount }})
+    </a>
+</div>
+@endif
+
 <div class="card">
     <form method="GET" class="filter-bar">
         <input type="text" name="search" class="form-control" value="{{ request('search') }}" placeholder="{{ __('acl::common.search') }}...">
         <select name="status" class="form-control" onchange="this.form.submit()">
             <option value="">{{ __('acl::resources.all_status') }}</option>
+            <option value="unconfigured" {{ request('status') === 'unconfigured' ? 'selected' : '' }}>🔒 {{ __('acl::resources.unconfigured') }}</option>
             <option value="public" {{ request('status') === 'public' ? 'selected' : '' }}>🌐 {{ __('acl::resources.public') }}</option>
             <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🛡️ {{ __('acl::resources.protected') }}</option>
             <option value="super_admin" {{ request('status') === 'super_admin' ? 'selected' : '' }}>👑 {{ __('acl::routes.super_admin') }}</option>
@@ -157,7 +173,11 @@
                             @endif
                         </td>
                         <td>
-                            @if($resource->is_super_admin_only)
+                            @if($resource->is_unconfigured)
+                                <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);" title="{{ __('acl::resources.unconfigured_tooltip') }}">
+                                    🔒 {{ __('acl::resources.unconfigured_badge') }}
+                                </span>
+                            @elseif($resource->is_super_admin_only)
                                 <span class="badge" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">👑 {{ __('acl::routes.super_admin') }}</span>
                             @elseif($resource->is_public)
                                 <span class="badge badge-public">{{ __('acl::resources.public') }}</span>

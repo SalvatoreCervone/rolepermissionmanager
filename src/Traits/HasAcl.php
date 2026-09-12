@@ -117,31 +117,40 @@ trait HasAcl
     {
         $slug = $role instanceof Role ? $role->slug : $role;
 
-        return $this->roles->contains('slug', $slug);
+        return $this->roles->contains('slug', $slug) || $this->roles->contains('name', $slug);
     }
 
     /**
      * Determine if this model has any of the given roles.
      *
-     * @param  string|array  ...$roles  Role slugs.
+     * @param  string|array  ...$roles  Role slugs or names.
      */
     public function hasAnyRole(string|array ...$roles): bool
     {
         $slugs = collect($roles)->flatten()->all();
 
-        return $this->roles->whereIn('slug', $slugs)->isNotEmpty();
+        return $this->roles->whereIn('slug', $slugs)->isNotEmpty()
+            || $this->roles->whereIn('name', $slugs)->isNotEmpty();
     }
 
     /**
      * Determine if this model has all of the given roles.
      *
-     * @param  string|array  ...$roles  Role slugs.
+     * @param  string|array  ...$roles  Role slugs or names.
      */
     public function hasAllRoles(string|array ...$roles): bool
     {
         $slugs = collect($roles)->flatten()->all();
+        $userRoleSlugs = $this->roles->pluck('slug')->all();
+        $userRoleNames = $this->roles->pluck('name')->all();
 
-        return $this->roles->whereIn('slug', $slugs)->count() === count($slugs);
+        foreach ($slugs as $s) {
+            if (!in_array($s, $userRoleSlugs, true) && !in_array($s, $userRoleNames, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /*
@@ -290,6 +299,11 @@ trait HasAcl
 
         if (!$rule) {
             return true; // Route is not ACL-managed.
+        }
+
+        // If resource is unconfigured (pending/locked), DENY access to EVERYONE (including Super Admin)
+        if (!empty($rule->is_unconfigured)) {
+            return false;
         }
 
         // 3. Evaluate Route Parameter / Placeholder Rules (if any)

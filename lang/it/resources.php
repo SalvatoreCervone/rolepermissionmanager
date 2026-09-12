@@ -32,4 +32,12 @@ return [
     'updated_success'      => "Risorsa ':identifier' aggiornata con successo.",
     'deleted_success'      => "Risorsa ':identifier' eliminata con successo.",
     'sync_success'         => 'Sincronizzazione completata con successo.',
+    'unconfigured'                  => 'In attesa di configurazione (Bloccata)',
+    'unconfigured_badge'            => 'In attesa di configurazione',
+    'unconfigured_tooltip'          => 'Auto-rilevata via protect(). Accesso bloccato (403) per tutti finché non viene configurata e salvata.',
+    'unconfigured_alert_title'      => 'Trovate :count risorse auto-rilevate in attesa di configurazione!',
+    'unconfigured_alert_desc'       => 'Queste risorse sono state protette nel codice ma non sono ancora state configurate. L\'accesso è completamente BLOCCATO (HTTP 403 per tutti, Super Admin incluso). Configura e salva per attivarle.',
+    'view_unconfigured'             => 'Vedi risorse bloccate',
+    'unconfigured_edit_warning_title' => 'Risorsa Auto-Rilevata in Fail-Closed (Bloccata)',
+    'unconfigured_edit_warning_desc'  => 'Questa risorsa è stata registrata automaticamente tramite AclRegistry::protect(). Attualmente blocca tutti gli accessi con HTTP 403 (compreso il Super Admin). Seleziona i permessi desiderati (oppure impostala come pubblica o solo super admin) e clicca "Salva" per sbloccarla.',
 ];

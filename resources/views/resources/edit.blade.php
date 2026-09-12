@@ -11,6 +11,18 @@
 <form action="{{ route('acl.resources.update', $resource->id) }}" method="POST">
     @csrf @method('PUT')
 
+    @if($resource->is_unconfigured)
+    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+            <span style="font-size: 28px; line-height: 1;">🔒</span>
+            <div>
+                <strong style="color: #ef4444; font-size: 16px;">{{ __('acl::resources.unconfigured_edit_warning_title') }}</strong>
+                <p style="margin: 6px 0 0; font-size: 14px; color: var(--text);">{{ __('acl::resources.unconfigured_edit_warning_desc') }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Resource Details --}}
     <div class="card" style="margin-bottom: 24px;">
         <div class="card-header"><h3>📦 {{ __('acl::resources.resource_details') }}</h3></div>

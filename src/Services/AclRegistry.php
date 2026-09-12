@@ -83,11 +83,16 @@ class AclRegistry
         $guard = config('rolepermissionmanager.middleware.guard');
         $user = $user ?? auth($guard)->user();
 
+        $rule = static::getResourceRule($identifier);
+
+        // If resource is unconfigured (pending/locked), DENY access to EVERYONE (including Super Admin)
+        if ($rule && !empty($rule->is_unconfigured)) {
+            return false;
+        }
+
         if ($user && method_exists($user, 'canAccessRoute')) {
             return $user->canAccessRoute($identifier);
         }
-
-        $rule = static::getResourceRule($identifier);
 
         // If not registered in ACL system
         if (!$rule) {
@@ -144,18 +149,94 @@ class AclRegistry
         $guard = config('rolepermissionmanager.middleware.guard');
         $user = $user ?? auth($guard)->user();
 
+        $rule = static::getResourceRule($identifier);
+
+        if ($rule && !empty($rule->is_unconfigured)) {
+            throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forUnconfiguredResource($identifier);
+        }
+
         if (!static::hasAccess($identifier, $user)) {
             if (!$user) {
                 throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::notLoggedIn();
             }
 
-            $rule = static::getResourceRule($identifier);
             if ($rule && !empty($rule->permission_slugs)) {
                 throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forPermissions($rule->permission_slugs);
             }
 
             throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forResource($identifier);
         }
+    }
+
+    /**
+     * Protect an internal method or resource with automatic discovery and Fail-Closed enforcement.
+     *
+     * If $identifier is omitted, it auto-detects the calling context (e.g. 'AnagraficaController@export').
+     * If the resource is not yet registered in the database, it automatically creates it as a custom
+     * resource in an unconfigured/locked state (is_unconfigured = true) and refreshes cache.
+     *
+     * In an unconfigured state, access is DENIED (HTTP 403) for EVERYONE (including Super Admin)
+     * until an administrator configures and saves permissions for it in the Admin Panel.
+     *
+     * @param  string|null  $identifier  Optional custom identifier (defaults to Class@method of caller)
+     * @param  mixed        $user        Optional authenticatable user
+     * @throws \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException
+     */
+    public static function protect(?string $identifier = null, mixed $user = null): void
+    {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        $caller = $trace[1] ?? [];
+        $callerClass = isset($caller['class']) ? class_basename($caller['class']) : 'Global';
+        $callerFunction = $caller['function'] ?? 'unknown';
+        $callerAction = isset($caller['class']) ? "{$caller['class']}@{$callerFunction}" : null;
+        $sourceFile = $trace[0]['file'] ?? null;
+        if ($sourceFile && function_exists('base_path')) {
+            $sourceFile = str_replace(base_path() . '/', '', $sourceFile);
+        }
+
+        if (empty($identifier)) {
+            $identifier = "{$callerClass}@{$callerFunction}";
+        }
+
+        $rule = static::getResourceRule($identifier);
+
+        // If resource doesn't exist yet, auto-create it as unconfigured/locked
+        if (!$rule) {
+            $resourceModel = config('rolepermissionmanager.models.secured_resource', SecuredResource::class);
+
+            $resourceModel::firstOrCreate(
+                ['identifier' => $identifier],
+                [
+                    'type'                => SecuredResource::TYPE_CUSTOM,
+                    'description'         => "Auto-discovered internal resource in {$identifier}",
+                    'controller_action'   => $callerAction,
+                    'source_file'         => $sourceFile,
+                    'is_unconfigured'     => true,
+                    'is_public'           => false,
+                    'is_super_admin_only' => false,
+                    'operator'            => 'OR',
+                    'is_deprecated'       => false,
+                ]
+            );
+
+            static::refreshCache();
+
+            AuditLogger::log(
+                'resource_auto_discovered',
+                'Resource',
+                $identifier,
+                "Auto-discovered unconfigured resource '{$identifier}' — locked until configured in Admin Panel"
+            );
+
+            // Re-fetch rule from fresh cache
+            $rule = static::getResourceRule($identifier);
+        }
+
+        if ($rule && !empty($rule->is_unconfigured)) {
+            throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forUnconfiguredResource($identifier);
+        }
+
+        static::authorize($identifier, $user);
     }
 
     /**
@@ -202,6 +283,7 @@ class AclRegistry
                 'id'                           => $resource->id,
                 'is_public'                    => $resource->is_public,
                 'is_super_admin_only'          => (bool) $resource->is_super_admin_only,
+                'is_unconfigured'              => (bool) ($resource->is_unconfigured ?? false),
                 'operator'                     => $resource->operator,
                 'permission_slugs'             => $resource->permissions->pluck('slug')->all(),
                 'unmatched_parameter_behavior'  => $resource->unmatched_parameter_behavior ?? 'allow',

@@ -32,4 +32,12 @@ return [
     'updated_success'      => "Resource ':identifier' updated successfully.",
     'deleted_success'      => "Resource ':identifier' deleted successfully.",
     'sync_success'         => 'Synchronization completed successfully.',
+    'unconfigured'                  => 'Awaiting Configuration (Blocked)',
+    'unconfigured_badge'            => 'Awaiting Configuration',
+    'unconfigured_tooltip'          => 'Auto-discovered via protect(). Access blocked (403) for everyone until configured and saved.',
+    'unconfigured_alert_title'      => ':count auto-discovered resources awaiting configuration!',
+    'unconfigured_alert_desc'       => 'These resources were protected in code but not yet configured. Access is strictly BLOCKED (HTTP 403 for everyone, including Super Admin). Configure and save to unlock.',
+    'view_unconfigured'             => 'View blocked resources',
+    'unconfigured_edit_warning_title' => 'Auto-Discovered Fail-Closed Resource (Blocked)',
+    'unconfigured_edit_warning_desc'  => 'This resource was automatically registered via AclRegistry::protect(). It currently denies all access with HTTP 403 (including for Super Admin). Select the required permissions (or set as public / super admin only) and click "Save" to unlock it.',
 ];

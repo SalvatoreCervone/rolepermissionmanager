@@ -26,10 +26,11 @@ class SecuredResourceController extends Controller
         // Filters
         if ($request->filled('status')) {
             match ($request->get('status')) {
-                'public'      => $query->where('is_public', true),
-                'protected'   => $query->where('is_public', false)->where('is_super_admin_only', false),
-                'super_admin' => $query->where('is_super_admin_only', true),
-                default       => null,
+                'unconfigured' => $query->where('is_unconfigured', true),
+                'public'       => $query->where('is_public', true),
+                'protected'    => $query->where('is_public', false)->where('is_super_admin_only', false)->where('is_unconfigured', false),
+                'super_admin'  => $query->where('is_super_admin_only', true),
+                default        => null,
             };
         }
         if ($request->filled('permission')) {
@@ -56,8 +57,9 @@ class SecuredResourceController extends Controller
 
         $resources = $query->paginate($perPage)->appends($request->query());
         $allPermissions = Permission::orderBy('module')->orderBy('name')->get()->groupBy('module');
+        $unconfiguredCount = SecuredResource::custom()->where('is_unconfigured', true)->count();
 
-        return view('acl::resources.index', compact('resources', 'allPermissions'));
+        return view('acl::resources.index', compact('resources', 'allPermissions', 'unconfiguredCount'));
     }
 
     /**
@@ -151,6 +153,7 @@ class SecuredResourceController extends Controller
             'is_public'           => $validated['is_public'] ?? false,
             'is_super_admin_only' => $validated['is_super_admin_only'] ?? false,
             'operator'            => $validated['operator'],
+            'is_unconfigured'     => false,
         ]);
 
         $resource->permissions()->sync($validated['permissions'] ?? []);

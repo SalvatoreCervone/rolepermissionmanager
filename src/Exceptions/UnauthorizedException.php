@@ -44,6 +44,17 @@ class UnauthorizedException extends HttpException
     }
 
     /**
+     * Create a new UnauthorizedException for an unconfigured (pending/locked) resource.
+     */
+    public static function forUnconfiguredResource(string $identifier): self
+    {
+        $exception = new self(403, "Resource '{$identifier}' is unconfigured and locked.");
+        $exception->resourceIdentifier = $identifier;
+
+        return $exception;
+    }
+
+    /**
      * Create a new UnauthorizedException for unauthenticated users.
      */
     public static function notLoggedIn(): self
