@@ -109,4 +109,14 @@ return [
     'lock_now_confirm'             => 'Are you sure you want to completely lock this route? Nobody (not even Super Admin) will be able to access it until reconfigured.',
     'bulk_set_unconfigured'        => '🔒 Lock Selected (Awaiting Configuration)',
     'bulk_set_authenticated_only'  => '👤 Set "Authenticated Only" (Remove permissions)',
+    'bulk_delete'                  => '🗑️ Delete Selected',
+
+    // Deprecated Routes Tab & Clean
+    'tab_deprecated'               => 'Deprecated Routes',
+    'deleted_success'              => "Route ':identifier' deleted successfully.",
+    'cleaned_deprecated_success'   => ':count deprecated routes deleted successfully.',
+    'deprecated_alert_title'       => ':count deprecated routes found (no longer in code)',
+    'deprecated_alert_desc'        => 'These routes were removed from the application source code but remain registered in the database. You can remove them individually or clean them all in one click.',
+    'clean_deprecated_btn'         => 'Delete All Deprecated',
+    'confirm_clean_deprecated'     => 'Are you sure you want to permanently delete all deprecated routes from the database?',
 ];

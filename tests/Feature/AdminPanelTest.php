@@ -529,4 +529,83 @@ class AdminPanelTest extends TestCase
         $response->assertSessionHas('success');
         $response->assertSessionHas('sync_output');
     }
+
+    public function test_admin_panel_can_delete_individual_route(): void
+    {
+        $route = SecuredResource::create([
+            'identifier'    => 'obsolete.route',
+            'type'          => SecuredResource::TYPE_ROUTE,
+            'method'        => 'GET',
+            'uri'           => 'obsolete',
+            'is_deprecated' => true,
+            'operator'      => 'OR',
+        ]);
+
+        $response = $this->delete("/acl-admin/routes/{$route->id}");
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('acl_secured_resources', ['id' => $route->id]);
+    }
+
+    public function test_admin_panel_can_clean_all_deprecated_routes(): void
+    {
+        $d1 = SecuredResource::create([
+            'identifier'    => 'dep.one',
+            'type'          => SecuredResource::TYPE_ROUTE,
+            'method'        => 'GET',
+            'uri'           => 'dep-one',
+            'is_deprecated' => true,
+            'operator'      => 'OR',
+        ]);
+        $d2 = SecuredResource::create([
+            'identifier'    => 'dep.two',
+            'type'          => SecuredResource::TYPE_ROUTE,
+            'method'        => 'GET',
+            'uri'           => 'dep-two',
+            'is_deprecated' => true,
+            'operator'      => 'OR',
+        ]);
+        $active = SecuredResource::create([
+            'identifier'    => 'active.route',
+            'type'          => SecuredResource::TYPE_ROUTE,
+            'method'        => 'GET',
+            'uri'           => 'active-route',
+            'is_deprecated' => false,
+            'operator'      => 'OR',
+        ]);
+
+        $response = $this->delete('/acl-admin/routes/deprecated');
+        $response->assertRedirect('/acl-admin/routes?status=deprecated');
+        $this->assertDatabaseMissing('acl_secured_resources', ['id' => $d1->id]);
+        $this->assertDatabaseMissing('acl_secured_resources', ['id' => $d2->id]);
+        $this->assertDatabaseHas('acl_secured_resources', ['id' => $active->id]);
+    }
+
+    public function test_admin_panel_can_bulk_delete_routes(): void
+    {
+        $r1 = SecuredResource::create([
+            'identifier'    => 'bulk.del.1',
+            'type'          => SecuredResource::TYPE_ROUTE,
+            'method'        => 'GET',
+            'uri'           => 'bulk-del-1',
+            'is_deprecated' => true,
+            'operator'      => 'OR',
+        ]);
+        $r2 = SecuredResource::create([
+            'identifier'    => 'bulk.del.2',
+            'type'          => SecuredResource::TYPE_ROUTE,
+            'method'        => 'GET',
+            'uri'           => 'bulk-del-2',
+            'is_deprecated' => true,
+            'operator'      => 'OR',
+        ]);
+
+        $response = $this->post('/acl-admin/routes/bulk-update', [
+            'ids'    => [$r1->id, $r2->id],
+            'action' => 'delete',
+        ]);
+
+        $response->assertRedirect('/acl-admin/routes');
+        $this->assertDatabaseMissing('acl_secured_resources', ['id' => $r1->id]);
+        $this->assertDatabaseMissing('acl_secured_resources', ['id' => $r2->id]);
+    }
 }

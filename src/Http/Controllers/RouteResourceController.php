@@ -28,6 +28,7 @@ class RouteResourceController extends Controller
         $scanner = app(RouteScanner::class);
         $allSkipped = $scanner->getSkippedRoutes();
         $managedCount = SecuredResource::routes()->count();
+        $deprecatedCount = SecuredResource::routes()->where('is_deprecated', true)->count();
         $skippedCount = $allSkipped->count();
         $totalCount = $managedCount + $skippedCount;
 
@@ -143,6 +144,7 @@ class RouteResourceController extends Controller
             'allPermissions',
             'isSkipped',
             'managedCount',
+            'deprecatedCount',
             'skippedCount',
             'totalCount',
             'status'
@@ -301,7 +303,7 @@ class RouteResourceController extends Controller
         $validated = $request->validate([
             'ids'           => 'required|array|min:1',
             'ids.*'         => "integer|exists:{$resourcesTable},id",
-            'action'        => 'required|string|in:set_super_admin,remove_super_admin,make_public,make_protected,set_unconfigured,set_authenticated_only,add_permissions,sync_permissions,remove_all_permissions,set_operator_or,set_operator_and',
+            'action'        => 'required|string|in:set_super_admin,remove_super_admin,make_public,make_protected,set_unconfigured,set_authenticated_only,add_permissions,sync_permissions,remove_all_permissions,set_operator_or,set_operator_and,delete',
             'permissions'   => 'nullable|array',
             'permissions.*' => "integer|exists:{$permissionsTable},id",
         ]);
@@ -369,6 +371,15 @@ class RouteResourceController extends Controller
                     $res->permissions()->detach();
                 }
             })(),
+            'delete' => (function () use ($resources) {
+                foreach ($resources as $res) {
+                    $res->permissions()->detach();
+                    if (method_exists($res, 'parameterRules')) {
+                        $res->parameterRules()->delete();
+                    }
+                    $res->delete();
+                }
+            })(),
         };
 
         AclRegistry::refreshCache();
@@ -394,5 +405,53 @@ class RouteResourceController extends Controller
             ->route('acl.routes.index')
             ->with('success', __('acl::routes.sync_success'))
             ->with('sync_output', $output);
+    }
+
+    /**
+     * Remove the specified HTTP route from storage.
+     */
+    public function destroy(int $id)
+    {
+        $resource = SecuredResource::routes()->findOrFail($id);
+        $identifier = $resource->identifier;
+
+        $resource->permissions()->detach();
+        if (method_exists($resource, 'parameterRules')) {
+            $resource->parameterRules()->delete();
+        }
+        $resource->delete();
+
+        AclRegistry::refreshCache();
+
+        AuditLogger::log('route_deleted', 'Route', $identifier, "Deleted route '{$identifier}'");
+
+        return redirect()
+            ->back()
+            ->with('success', __('acl::routes.deleted_success', ['identifier' => $identifier]));
+    }
+
+    /**
+     * Clean all deprecated routes from database.
+     */
+    public function cleanDeprecated()
+    {
+        $deprecated = SecuredResource::routes()->where('is_deprecated', true)->get();
+        $count = $deprecated->count();
+
+        foreach ($deprecated as $route) {
+            $route->permissions()->detach();
+            if (method_exists($route, 'parameterRules')) {
+                $route->parameterRules()->delete();
+            }
+            $route->delete();
+        }
+
+        AclRegistry::refreshCache();
+
+        AuditLogger::log('deprecated_routes_cleaned', 'Route', "{$count} routes", "Cleaned {$count} deprecated routes");
+
+        return redirect()
+            ->route('acl.routes.index', ['status' => 'deprecated'])
+            ->with('success', __('acl::routes.cleaned_deprecated_success', ['count' => $count]));
     }
 }

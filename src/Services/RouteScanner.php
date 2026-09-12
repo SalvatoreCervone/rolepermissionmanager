@@ -553,16 +553,33 @@ class RouteScanner
             SecuredResource::class
         );
 
-        $orphaned = $resourceModel::routes()
-            ->whereNotIn('identifier', $scannedIdentifiers)
-            ->where('is_deprecated', false)
-            ->get();
+        if ($clean) {
+            // Permanently remove all orphaned routes, including those previously flagged as deprecated
+            $toRemove = $resourceModel::routes()
+                ->where(function ($q) use ($scannedIdentifiers) {
+                    $q->whereNotIn('identifier', $scannedIdentifiers)
+                      ->orWhere('is_deprecated', true);
+                })
+                ->get();
 
-        foreach ($orphaned as $resource) {
-            if ($clean) {
+            foreach ($toRemove as $resource) {
+                if (method_exists($resource, 'permissions')) {
+                    $resource->permissions()->detach();
+                }
+                if (method_exists($resource, 'parameterRules')) {
+                    $resource->parameterRules()->delete();
+                }
                 $resource->delete();
                 $this->summary['removed'][] = $resource->identifier;
-            } else {
+            }
+        } else {
+            // Soft-flag newly discovered orphaned routes as deprecated
+            $orphaned = $resourceModel::routes()
+                ->whereNotIn('identifier', $scannedIdentifiers)
+                ->where('is_deprecated', false)
+                ->get();
+
+            foreach ($orphaned as $resource) {
                 $resource->update(['is_deprecated' => true]);
                 $this->summary['deprecated'][] = $resource->identifier;
             }

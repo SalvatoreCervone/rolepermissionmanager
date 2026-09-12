@@ -126,6 +126,29 @@ class SyncRoutesCommandTest extends TestCase
         $this->assertNull(SecuredResource::findByIdentifier('removed.route'));
     }
 
+    public function test_scanner_removes_already_deprecated_routes_with_clean_option(): void
+    {
+        $scanner = app(RouteScanner::class);
+        $scanner->scan();
+
+        // Route that was already flagged as deprecated in a previous sync
+        SecuredResource::create([
+            'identifier'        => 'already.deprecated.route',
+            'controller_action' => 'OldController@index',
+            'method'            => 'GET',
+            'uri'               => 'old-path',
+            'is_public'         => false,
+            'is_deprecated'     => true,
+            'operator'          => 'OR',
+        ]);
+
+        $scanner2 = app(RouteScanner::class);
+        $summary = $scanner2->scan(clean: true);
+
+        $this->assertContains('already.deprecated.route', $summary['removed']);
+        $this->assertNull(SecuredResource::findByIdentifier('already.deprecated.route'));
+    }
+
     public function test_scanner_auto_creates_permissions(): void
     {
         $scanner = app(RouteScanner::class);

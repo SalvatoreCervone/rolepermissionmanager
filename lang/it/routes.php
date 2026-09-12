@@ -109,4 +109,14 @@ return [
     'lock_now_confirm'             => 'Vuoi bloccare completamente questa rotta? Nessuno (nemmeno il Super Admin) potrà accedervi finché non verrà riconfigurata.',
     'bulk_set_unconfigured'        => '🔒 Blocca Selezionate (In attesa di configurazione)',
     'bulk_set_authenticated_only'  => '👤 Imposta "Solo Autenticati" (Rimuovi permessi)',
+    'bulk_delete'                  => '🗑️ Elimina Selezionate',
+
+    // Deprecated Routes Tab & Clean
+    'tab_deprecated'               => 'Rotte Deprecate',
+    'deleted_success'              => "Rotta ':identifier' eliminata con successo.",
+    'cleaned_deprecated_success'   => ':count rotte deprecate eliminate con successo.',
+    'deprecated_alert_title'       => 'Trovate :count rotte deprecate (non più presenti nel codice)',
+    'deprecated_alert_desc'        => 'Queste rotte sono state rimosse dal codice sorgente ma rimangono registrate nel database. Puoi rimuoverle singolarmente o ripulirle tutte in un clic.',
+    'clean_deprecated_btn'         => 'Elimina Tutte le Deprecate',
+    'confirm_clean_deprecated'     => 'Sei sicuro di voler eliminare definitivamente tutte le rotte deprecate dal database?',
 ];

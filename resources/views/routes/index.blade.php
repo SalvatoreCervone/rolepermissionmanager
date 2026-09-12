@@ -40,7 +40,33 @@
         <span>{{ __('acl::routes.tab_excluded') }}</span>
         <span class="badge" style="background: rgba(255,255,255,0.2); font-size: 11px; padding: 2px 6px; border-radius: 10px;">{{ $skippedCount ?? 0 }}</span>
     </a>
+
+    <a href="{{ route('acl.routes.index', array_merge(request()->except('status', 'page'), ['status' => 'deprecated'])) }}" 
+       class="btn {{ $currentStatus === 'deprecated' ? 'btn-primary' : 'btn-secondary' }} btn-sm"
+       style="display: inline-flex; align-items: center; gap: 6px;">
+        <span>📦</span>
+        <span>{{ __('acl::routes.tab_deprecated') }}</span>
+        <span class="badge" style="background: {{ ($deprecatedCount ?? 0) > 0 ? 'rgba(234, 179, 8, 0.3); color: #facc15;' : 'rgba(255,255,255,0.2);' }} font-size: 11px; padding: 2px 6px; border-radius: 10px;">{{ $deprecatedCount ?? 0 }}</span>
+    </a>
 </div>
+
+@if($currentStatus === 'deprecated' && ($deprecatedCount ?? 0) > 0)
+<div style="background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 24px;">📦</span>
+        <div>
+            <strong style="color: #facc15; font-size: 15px;">{{ __('acl::routes.deprecated_alert_title', ['count' => $deprecatedCount]) }}</strong>
+            <p style="margin: 2px 0 0; font-size: 13px; color: var(--text-muted);">{{ __('acl::routes.deprecated_alert_desc') }}</p>
+        </div>
+    </div>
+    <form action="{{ route('acl.routes.clean_deprecated') }}" method="POST" onsubmit="return confirm('{{ __('acl::routes.confirm_clean_deprecated') }}')">
+        @csrf @method('DELETE')
+        <button type="submit" class="btn btn-danger btn-sm" style="background: #ef4444; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 500;">
+            🗑️ {{ __('acl::routes.clean_deprecated_btn') }}
+        </button>
+    </form>
+</div>
+@endif
 
 {{-- Bulk Action Bar (Visible when routes are selected) --}}
 @if(!$isSkipped)
@@ -70,6 +96,7 @@
             <option value="remove_all_permissions">{{ __('acl::routes.bulk_remove_all_permissions') }}</option>
             <option value="set_operator_or">{{ __('acl::routes.bulk_operator_or') }}</option>
             <option value="set_operator_and">{{ __('acl::routes.bulk_operator_and') }}</option>
+            <option value="delete">{{ __('acl::routes.bulk_delete') }}</option>
         </select>
 
         <button type="button" id="btnOpenPermissionModal" class="btn btn-secondary btn-sm" style="display: none;">
@@ -374,7 +401,15 @@
                             @if($route->is_skipped ?? false)
                                 <a href="{{ route('acl.scanner_rules.index') }}" class="btn btn-secondary btn-sm" title="{{ __('acl::routes.manage_rules') }}">⚙️ {{ __('acl::nav.scanner_rules') }}</a>
                             @else
-                                <a href="{{ route('acl.routes.edit', $route->id) }}" class="btn btn-secondary btn-sm">⚙️ {{ __('acl::routes.configure') }}</a>
+                                <div style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
+                                    <a href="{{ route('acl.routes.edit', $route->id) }}" class="btn btn-secondary btn-sm">⚙️ {{ __('acl::routes.configure') }}</a>
+                                    @if($route->is_deprecated)
+                                        <form action="{{ route('acl.routes.destroy', $route->id) }}" method="POST" class="inline-form" onsubmit="return confirm('{{ __('acl::common.confirm_delete') }}')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm" title="{{ __('acl::common.delete') }}">🗑️</button>
+                                        </form>
+                                    @endif
+                                </div>
                             @endif
                         </td>
                     </tr>
@@ -504,6 +539,13 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             alert("Seleziona un'azione massiva da eseguire.");
             return;
+        }
+
+        if (action === 'delete') {
+            if (!confirm("{{ __('acl::routes.confirm_bulk_action') }}")) {
+                e.preventDefault();
+                return;
+            }
         }
 
         if ((action === 'add_permissions' || action === 'sync_permissions') && selectedPermIds.length === 0) {
