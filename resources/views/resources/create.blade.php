@@ -38,6 +38,12 @@
     {{-- Access Settings --}}
     @include('acl::partials.access-settings')
 
+    {{-- Action Buttons (Before Permission Picker) --}}
+    <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+        <button type="submit" class="btn btn-primary">{{ __('acl::common.save') }}</button>
+        <a href="{{ route('acl.resources.index') }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
+    </div>
+
     {{-- Permission Assignment --}}
     @include('acl::partials.permission-picker', [
         'allPermissions'      => $allPermissions,

@@ -47,6 +47,17 @@
     {{-- Access Settings --}}
     @include('acl::partials.access-settings', ['resource' => $resource])
 
+    {{-- Action Buttons (Before Permission Picker) --}}
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary">{{ __('acl::common.save') }}</button>
+            <a href="{{ route('acl.resources.index') }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
+        </div>
+        <button type="button" class="btn btn-danger" onclick="lockResourceImmediately()" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);">
+            {{ __('acl::resources.lock_now_btn') }}
+        </button>
+    </div>
+
     {{-- Permission Assignment --}}
     @include('acl::partials.permission-picker', [
         'allPermissions'      => $allPermissions,

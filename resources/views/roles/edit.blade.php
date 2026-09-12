@@ -27,6 +27,12 @@
         </div>
     </div>
 
+    {{-- Action Buttons (Before Permission Picker) --}}
+    <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+        <button type="submit" class="btn btn-primary">{{ __('acl::common.save') }}</button>
+        <a href="{{ route('acl.roles.index') }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
+    </div>
+
     {{-- Assign Permissions --}}
     @include('acl::partials.permission-picker', [
         'allPermissions'      => $allPermissions,
