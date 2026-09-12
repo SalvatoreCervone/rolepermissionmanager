@@ -96,6 +96,8 @@ class SecuredResourceController extends Controller
             'type'                => SecuredResource::TYPE_CUSTOM,
             'description'         => $validated['description'] ?? null,
             'controller_action'   => $validated['controller_action'] ?? null,
+            'method'              => 'CUSTOM',
+            'uri'                 => trim($validated['identifier']),
             'is_public'           => $validated['is_public'] ?? false,
             'is_super_admin_only' => $validated['is_super_admin_only'] ?? false,
             'operator'            => $validated['operator'],

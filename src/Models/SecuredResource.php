@@ -27,6 +27,23 @@ class SecuredResource extends Model
         return config('rolepermissionmanager.tables.secured_resources', 'acl_secured_resources');
     }
 
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (SecuredResource $resource) {
+            if ($resource->type === self::TYPE_CUSTOM) {
+                if (empty($resource->method)) {
+                    $resource->method = 'CUSTOM';
+                }
+                if (empty($resource->uri)) {
+                    $resource->uri = $resource->identifier ?? 'custom';
+                }
+            }
+        });
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Relationships

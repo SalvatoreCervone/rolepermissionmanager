@@ -211,6 +211,8 @@ class AclRegistry
                     'description'         => "Auto-discovered internal resource in {$identifier}",
                     'controller_action'   => $callerAction,
                     'source_file'         => $sourceFile,
+                    'method'              => 'CUSTOM',
+                    'uri'                 => $identifier,
                     'is_unconfigured'     => true,
                     'is_public'           => false,
                     'is_super_admin_only' => false,

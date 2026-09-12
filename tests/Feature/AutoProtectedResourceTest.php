@@ -50,6 +50,8 @@ class AutoProtectedResourceTest extends TestCase
         $this->assertEquals(SecuredResource::TYPE_CUSTOM, $resource->type);
         $this->assertTrue($resource->is_unconfigured);
         $this->assertFalse($resource->is_public);
+        $this->assertEquals('CUSTOM', $resource->method);
+        $this->assertNotNull($resource->uri);
         $this->assertEquals(DummyTargetService::class . '@internalExport', $resource->controller_action);
     }
 
