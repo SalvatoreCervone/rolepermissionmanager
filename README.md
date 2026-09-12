@@ -33,6 +33,8 @@ When business rules change, developers must edit controllers, routes, commit, an
 ## ✨ Features
 
 - 🚀 **Zero Hardcoding** — Define clean routes without cluttering them with `permission:...` middleware
+- 🛡️ **Zero-Trust Auto-Discovery (`AclRegistry::protect()`)** — Protect any controller method, service, or business action with a single line of code. Automatically detects the caller and locks access (HTTP 403 for everyone, including Super Admin) until configured in the panel
+- 🎯 **Granular Route Parameter Rules** — Secure URI placeholders (e.g. `/reports/{page}`) with specific permissions per parameter value and customizable fallback policies (404 Not Found, 403 Forbidden, or Pass-through)
 - 🔍 **Route Auto-Discovery** — `php artisan acl:sync` scans your routes and registers new endpoints automatically
 - 📦 **Custom Resources Support** — Create, manage, and protect arbitrary classes, methods, services, or UI actions from the panel
 - 🔲 **Interactive Role-Permission Matrix** — Spreadsheet-style pivot matrix (`/acl-admin/matrix`) with real-time AJAX permission toggling
@@ -91,11 +93,12 @@ Or publish individual components using specific tags:
 php artisan migrate
 ```
 
-This creates 8 tables (customizable in config):
+This creates 9 tables (customizable in config):
 
 - `acl_roles`
 - `acl_permissions`
 - `acl_secured_resources`
+- `acl_route_parameter_rules` (granular parameter authorization & fallbacks)
 - `acl_scanner_rules` (dynamic route exclusions & inclusions)
 - `acl_model_has_roles` (polymorphic pivot)
 - `acl_model_has_permissions` (polymorphic pivot)
@@ -234,6 +237,65 @@ php artisan acl:import /path/to/acl-export.json --overwrite  # Overwrite existin
     <button class="btn-info">View Details</button>
 @endcanResource
 ```
+
+---
+
+## 🛡️ Zero-Trust Auto-Discovery & Fail-Closed Protection
+
+Protect internal controller methods, services, or sensitive business actions with a **single line of code**, completely eliminating human error (forgetting to register the resource or leaving methods unprotected):
+
+```php
+use SalvatoreCervone\RolePermissionManager\Services\AclRegistry;
+
+class CorsoController extends Controller
+{
+    public function esportaAnagrafica()
+    {
+        // 1. One line: auto-detects 'CorsoController@esportaAnagrafica'
+        AclRegistry::protect();
+
+        // Or specify an explicit alias:
+        // AclRegistry::protect('anagrafica.export');
+
+        // Business logic runs ONLY if authorized...
+    }
+}
+```
+
+### How the Zero-Trust Fail-Closed Flow Works:
+
+1. **Auto-Discovery via `debug_backtrace`**: When `AclRegistry::protect()` is called for the first time, it captures the calling class, method, and source file.
+2. **Instant Fail-Closed (HTTP 403 for EVERYONE)**:
+   - If the resource has not yet been configured in the database, it is automatically created with `is_unconfigured = true`.
+   - **Access is strictly blocked with HTTP 403 Forbidden for all users, EVEN Super Admin** with `all_access = true`.
+   - No sensitive code can ever execute accidentally without explicit authorization rules in place.
+3. **Admin Panel Notification**:
+   - An alert banner immediately appears on the Custom Resources page (`/acl-admin/resources`), indicating how many auto-discovered resources are awaiting configuration.
+   - Filter by status `🔒 Awaiting Configuration (Blocked)` to locate them.
+4. **Configuration & Unlocking**:
+   - When an administrator assigns permissions (or marks the resource as public or super-admin only) and clicks **Save**, `is_unconfigured` is set to `false`.
+   - The ACL cache is instantly refreshed, unlocking normal access for authorized users.
+
+---
+
+## 🎯 Granular Route Parameter Rules (URI Placeholders)
+
+Secure dynamic route parameters without writing custom controller logic or custom regex middleware. For example, on a route like `/server-reports/{page}/{destination}`:
+
+1. **Automatic Placeholder Detection**:
+   - In `/acl-admin/routes/{id}/edit`, the system automatically parses and displays badges for all URI placeholders (e.g. `{page}`, `{destination}`).
+2. **Per-Value Authorization**:
+   - Define granular permission rules for specific parameter values:
+     - `page = financial` ➔ Requires `reports.view_financial`
+     - `page = audits` ➔ Requires `reports.view_audits` (or Super Admin only)
+     - `page = overview` ➔ Mark as public access
+3. **Unmatched Parameter Policy (Fallback)**:
+   - Choose how the system reacts when a user requests an unlisted parameter value (e.g. `/server-reports/malicious_page/1`):
+     - **404 Not Found** (`deny_404`): Blocks probe attempts early before hitting your controller.
+     - **403 Forbidden** (`deny_403`): Rejects unauthorized values.
+     - **Pass-through** (`allow`): Passes unlisted values to your controller.
+4. **Zero Performance Overhead**:
+   - Parameter rules are compiled directly into the cached resources map and evaluated in-memory by `DynamicAclGuard`.
 
 ---
 
