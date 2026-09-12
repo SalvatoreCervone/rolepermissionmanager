@@ -26,11 +26,12 @@ class SecuredResourceController extends Controller
         // Filters
         if ($request->filled('status')) {
             match ($request->get('status')) {
-                'unconfigured' => $query->where('is_unconfigured', true),
-                'public'       => $query->where('is_public', true),
-                'protected'    => $query->where('is_public', false)->where('is_super_admin_only', false)->where('is_unconfigured', false),
-                'super_admin'  => $query->where('is_super_admin_only', true),
-                default        => null,
+                'unconfigured'  => $query->unconfigured(),
+                'public'        => $query->public(),
+                'authenticated' => $query->authenticatedOnly(),
+                'protected'     => $query->protectedWithPermissions(),
+                'super_admin'   => $query->superAdminOnly(),
+                default         => null,
             };
         }
         if ($request->filled('permission')) {
@@ -84,12 +85,47 @@ class SecuredResourceController extends Controller
             'identifier'          => "required|string|max:255|unique:{$resourcesTable},identifier",
             'description'         => 'nullable|string|max:255',
             'controller_action'   => 'nullable|string|max:255',
+            'access_policy'       => 'nullable|string|in:public,authenticated,protected,super_admin,unconfigured',
             'is_public'           => 'boolean',
             'is_super_admin_only' => 'boolean',
+            'is_unconfigured'     => 'boolean',
             'operator'            => 'required|in:OR,AND',
             'permissions'         => 'nullable|array',
             'permissions.*'       => "integer|exists:{$permissionsTable},id",
         ]);
+
+        $policy = $validated['access_policy'] ?? null;
+        $permissionsToSync = $validated['permissions'] ?? [];
+
+        if ($policy === 'public') {
+            $isPublic = true;
+            $isSuperAdminOnly = false;
+            $isUnconfigured = false;
+            $permissionsToSync = [];
+        } elseif ($policy === 'super_admin') {
+            $isPublic = false;
+            $isSuperAdminOnly = true;
+            $isUnconfigured = false;
+            $permissionsToSync = [];
+        } elseif ($policy === 'unconfigured') {
+            $isPublic = false;
+            $isSuperAdminOnly = false;
+            $isUnconfigured = true;
+            $permissionsToSync = [];
+        } elseif ($policy === 'authenticated') {
+            $isPublic = false;
+            $isSuperAdminOnly = false;
+            $isUnconfigured = false;
+            $permissionsToSync = [];
+        } elseif ($policy === 'protected') {
+            $isPublic = false;
+            $isSuperAdminOnly = false;
+            $isUnconfigured = false;
+        } else {
+            $isPublic = $validated['is_public'] ?? false;
+            $isSuperAdminOnly = $validated['is_super_admin_only'] ?? false;
+            $isUnconfigured = $validated['is_unconfigured'] ?? false;
+        }
 
         $resource = SecuredResource::create([
             'identifier'          => trim($validated['identifier']),
@@ -98,14 +134,15 @@ class SecuredResourceController extends Controller
             'controller_action'   => $validated['controller_action'] ?? null,
             'method'              => 'CUSTOM',
             'uri'                 => trim($validated['identifier']),
-            'is_public'           => $validated['is_public'] ?? false,
-            'is_super_admin_only' => $validated['is_super_admin_only'] ?? false,
+            'is_public'           => $isPublic,
+            'is_super_admin_only' => $isSuperAdminOnly,
+            'is_unconfigured'     => $isUnconfigured,
             'operator'            => $validated['operator'],
             'is_deprecated'       => false,
         ]);
 
-        if (!empty($validated['permissions'])) {
-            $resource->permissions()->sync($validated['permissions']);
+        if (!empty($permissionsToSync)) {
+            $resource->permissions()->sync($permissionsToSync);
         }
 
         AclRegistry::refreshCache();
@@ -141,24 +178,59 @@ class SecuredResourceController extends Controller
             'identifier'          => "required|string|max:255|unique:{$resourcesTable},identifier,{$id}",
             'description'         => 'nullable|string|max:255',
             'controller_action'   => 'nullable|string|max:255',
+            'access_policy'       => 'nullable|string|in:public,authenticated,protected,super_admin,unconfigured',
             'is_public'           => 'boolean',
             'is_super_admin_only' => 'boolean',
+            'is_unconfigured'     => 'boolean',
             'operator'            => 'required|in:OR,AND',
             'permissions'         => 'nullable|array',
             'permissions.*'       => "integer|exists:{$permissionsTable},id",
         ]);
 
+        $policy = $validated['access_policy'] ?? null;
+        $permissionsToSync = $validated['permissions'] ?? [];
+
+        if ($policy === 'public') {
+            $isPublic = true;
+            $isSuperAdminOnly = false;
+            $isUnconfigured = false;
+            $permissionsToSync = [];
+        } elseif ($policy === 'super_admin') {
+            $isPublic = false;
+            $isSuperAdminOnly = true;
+            $isUnconfigured = false;
+            $permissionsToSync = [];
+        } elseif ($policy === 'unconfigured') {
+            $isPublic = false;
+            $isSuperAdminOnly = false;
+            $isUnconfigured = true;
+            $permissionsToSync = [];
+        } elseif ($policy === 'authenticated') {
+            $isPublic = false;
+            $isSuperAdminOnly = false;
+            $isUnconfigured = false;
+            $permissionsToSync = [];
+        } elseif ($policy === 'protected') {
+            $isPublic = false;
+            $isSuperAdminOnly = false;
+            $isUnconfigured = false;
+        } else {
+            $isPublic = $validated['is_public'] ?? false;
+            $isSuperAdminOnly = $validated['is_super_admin_only'] ?? false;
+            $isUnconfigured = $validated['is_unconfigured'] ?? ($request->has('is_unconfigured') ? (bool)$request->is_unconfigured : false);
+        }
+
         $resource->update([
             'identifier'          => trim($validated['identifier']),
             'description'         => $validated['description'] ?? null,
             'controller_action'   => $validated['controller_action'] ?? null,
-            'is_public'           => $validated['is_public'] ?? false,
-            'is_super_admin_only' => $validated['is_super_admin_only'] ?? false,
+            'is_public'           => $isPublic,
+            'is_super_admin_only' => $isSuperAdminOnly,
+            'is_unconfigured'     => $isUnconfigured,
             'operator'            => $validated['operator'],
-            'is_unconfigured'     => false,
         ]);
 
-        $resource->permissions()->sync($validated['permissions'] ?? []);
+        $resource->permissions()->sync($permissionsToSync);
         AclRegistry::refreshCache();
 
         AuditLogger::log('resource_updated', 'Resource', $resource->identifier, "Updated custom resource '{$resource->identifier}'");
@@ -199,7 +271,7 @@ class SecuredResourceController extends Controller
         $validated = $request->validate([
             'ids'           => 'required|array|min:1',
             'ids.*'         => "integer|exists:{$resourcesTable},id",
-            'action'        => 'required|string|in:set_super_admin,remove_super_admin,make_public,make_protected,add_permissions,sync_permissions,remove_all_permissions,set_operator_or,set_operator_and,delete',
+            'action'        => 'required|string|in:set_super_admin,remove_super_admin,make_public,make_protected,set_unconfigured,set_authenticated_only,add_permissions,sync_permissions,remove_all_permissions,set_operator_or,set_operator_and,delete',
             'permissions'   => 'nullable|array',
             'permissions.*' => "integer|exists:{$permissionsTable},id",
         ]);
@@ -213,6 +285,7 @@ class SecuredResourceController extends Controller
             'set_super_admin' => SecuredResource::whereIn('id', $ids)->update([
                 'is_super_admin_only' => true,
                 'is_public'           => false,
+                'is_unconfigured'     => false,
             ]),
             'remove_super_admin' => SecuredResource::whereIn('id', $ids)->update([
                 'is_super_admin_only' => false,
@@ -220,10 +293,27 @@ class SecuredResourceController extends Controller
             'make_public' => SecuredResource::whereIn('id', $ids)->update([
                 'is_public'           => true,
                 'is_super_admin_only' => false,
+                'is_unconfigured'     => false,
             ]),
             'make_protected' => SecuredResource::whereIn('id', $ids)->update([
-                'is_public' => false,
+                'is_public'           => false,
+                'is_unconfigured'     => false,
             ]),
+            'set_unconfigured' => SecuredResource::whereIn('id', $ids)->update([
+                'is_unconfigured'     => true,
+                'is_public'           => false,
+                'is_super_admin_only' => false,
+            ]),
+            'set_authenticated_only' => (function () use ($resources, $ids) {
+                SecuredResource::whereIn('id', $ids)->update([
+                    'is_unconfigured'     => false,
+                    'is_public'           => false,
+                    'is_super_admin_only' => false,
+                ]);
+                foreach ($resources as $res) {
+                    $res->permissions()->detach();
+                }
+            })(),
             'set_operator_or' => SecuredResource::whereIn('id', $ids)->update([
                 'operator' => 'OR',
             ]),

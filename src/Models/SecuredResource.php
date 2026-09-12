@@ -252,6 +252,64 @@ class SecuredResource extends Model
     }
 
     /**
+     * Scope to resources accessible by any authenticated user without special permissions.
+     */
+    public function scopeAuthenticatedOnly($query)
+    {
+        return $query->where('is_public', false)
+            ->where(function ($q) {
+                $q->where('is_super_admin_only', false)->orWhereNull('is_super_admin_only');
+            })
+            ->where(function ($q) {
+                $q->where('is_unconfigured', false)->orWhereNull('is_unconfigured');
+            })
+            ->doesntHave('permissions');
+    }
+
+    /**
+     * Scope to resources protected by specific permissions.
+     */
+    public function scopeProtectedWithPermissions($query)
+    {
+        return $query->where('is_public', false)
+            ->where(function ($q) {
+                $q->where('is_super_admin_only', false)->orWhereNull('is_super_admin_only');
+            })
+            ->where(function ($q) {
+                $q->where('is_unconfigured', false)->orWhereNull('is_unconfigured');
+            })
+            ->has('permissions');
+    }
+
+    /**
+     * Check if this resource requires authentication only (no special permissions, not public, not super admin, not unconfigured).
+     */
+    public function isAuthenticatedOnly(): bool
+    {
+        if ($this->isPublic() || $this->isSuperAdminOnly() || $this->isUnconfigured()) {
+            return false;
+        }
+
+        return $this->relationLoaded('permissions')
+            ? $this->permissions->isEmpty()
+            : !$this->hasPermissions();
+    }
+
+    /**
+     * Check if this resource is protected with specific permissions.
+     */
+    public function isProtectedWithPermissions(): bool
+    {
+        if ($this->isPublic() || $this->isSuperAdminOnly() || $this->isUnconfigured()) {
+            return false;
+        }
+
+        return $this->relationLoaded('permissions')
+            ? $this->permissions->isNotEmpty()
+            : $this->hasPermissions();
+    }
+
+    /**
      * Check if this resource is deprecated.
      */
     public function isDeprecated(): bool

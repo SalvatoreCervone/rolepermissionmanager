@@ -365,7 +365,10 @@
         .badge-put, .badge-patch { background: var(--info-subtle); color: var(--info); }
         .badge-delete { background: var(--danger-subtle); color: var(--danger); }
         .badge-public { background: var(--success-subtle); color: var(--success); }
+        .badge-authenticated { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
         .badge-protected { background: var(--accent-subtle); color: var(--accent); }
+        .badge-superadmin { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+        .badge-unconfigured { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
         .badge-deprecated { background: var(--danger-subtle); color: var(--danger); }
         .badge-or { background: var(--info-subtle); color: var(--info); }
         .badge-and { background: var(--warning-subtle); color: var(--warning); }

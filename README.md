@@ -328,6 +328,28 @@ class CorsoController extends Controller
 
 ---
 
+## 🎛️ 5 Explicit Visual Access Policies (Zero Ambiguity)
+
+In previous systems, removing all permissions from a protected route or resource would subtly default to open access for any authenticated user while still displaying a generic "Protected" badge. Role Permission Manager resolves this with **5 distinct, visually unequivocal access policies**:
+
+| Policy | Visual Badge | Behavior |
+|---|---|---|
+| 🌐 **Pubblica** | `badge-public` (Green) | Accessible to anyone on the internet without login. |
+| 👤 **Solo Autenticati** | `badge-authenticated` (Purple) | Requires authentication only; open to all logged-in users regardless of role or permissions. |
+| 🛡️ **Con Permessi Specifici** | `badge-protected` (Blue) | Requires login and matching granular permissions (`OR` / `AND` operator). |
+| 👑 **Solo Super Admin** | `badge-superadmin` (Gold) | Reserved exclusively for Super Admin role (HTTP 403 for everyone else). |
+| 🔒 **Bloccata / Da Configurare** | `badge-unconfigured` (Red) | Fail-Closed lockout. HTTP 403 Forbidden for everyone, **including Super Admin**. |
+
+### One-Click Instant Locking (`🔒 Blocca subito`)
+In the edit screen of any HTTP route or custom resource, administrators can click the dedicated **🔒 Blocca (Fail-Closed)** button to immediately sever access to any endpoint without deleting its configuration.
+
+### Bulk Policy Operations
+From both the **HTTP Routes** and **Custom Resources** tables, select multiple items and apply:
+- `🔒 Blocca Selezionate (In attesa di configurazione)`: Instantly sets `is_unconfigured = true` in bulk.
+- `👤 Imposta "Solo Autenticati"`: Clears permissions and marks resources as accessible to any authenticated user in bulk.
+
+---
+
 ## 🎯 Granular Route Parameter Rules (URI Placeholders)
 
 Secure dynamic route parameters without writing custom controller logic or custom regex middleware. For example, on a route like `/server-reports/{page}/{destination}`:

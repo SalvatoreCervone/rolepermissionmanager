@@ -63,6 +63,8 @@
             <option value="remove_super_admin">{{ __('acl::routes.bulk_remove_super_admin') }}</option>
             <option value="make_public">{{ __('acl::routes.bulk_make_public') }}</option>
             <option value="make_protected">{{ __('acl::routes.bulk_make_protected') }}</option>
+            <option value="set_authenticated_only">{{ __('acl::routes.bulk_set_authenticated_only') }}</option>
+            <option value="set_unconfigured">{{ __('acl::routes.bulk_set_unconfigured') }}</option>
             <option value="add_permissions">{{ __('acl::routes.bulk_add_permissions') }}</option>
             <option value="sync_permissions">{{ __('acl::routes.bulk_sync_permissions') }}</option>
             <option value="remove_all_permissions">{{ __('acl::routes.bulk_remove_all_permissions') }}</option>
@@ -135,8 +137,10 @@
             <option value="">{{ __('acl::routes.all_status') }}</option>
             <option value="managed" {{ request('status') === 'managed' ? 'selected' : '' }}>🛡️ {{ __('acl::routes.tab_managed') }}</option>
             <option value="public" {{ request('status') === 'public' ? 'selected' : '' }}>🌐 {{ __('acl::routes.public') }}</option>
-            <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🔒 {{ __('acl::routes.protected') }}</option>
+            <option value="authenticated" {{ request('status') === 'authenticated' ? 'selected' : '' }}>👤 {{ __('acl::routes.authenticated_only') }}</option>
+            <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🛡️ {{ __('acl::routes.protected') }}</option>
             <option value="super_admin" {{ request('status') === 'super_admin' ? 'selected' : '' }}>👑 {{ __('acl::routes.super_admin') }}</option>
+            <option value="unconfigured" {{ request('status') === 'unconfigured' ? 'selected' : '' }}>🔒 {{ __('acl::routes.unconfigured') }}</option>
             <option value="deprecated" {{ request('status') === 'deprecated' ? 'selected' : '' }}>📦 {{ __('acl::routes.deprecated') }}</option>
             <option value="skipped" {{ request('status') === 'skipped' ? 'selected' : '' }}>⏭️ {{ __('acl::routes.skipped') }}</option>
         </select>
@@ -279,12 +283,16 @@
                                         </span>
                                     @elseif($route->is_deprecated)
                                         <span class="badge badge-deprecated">{{ __('acl::routes.deprecated') }}</span>
+                                    @elseif($route->is_unconfigured)
+                                        <span class="badge badge-unconfigured" title="{{ __('acl::routes.unconfigured_tooltip') }}">🔒 {{ __('acl::routes.unconfigured') }}</span>
                                     @elseif($route->is_super_admin_only)
-                                        <span class="badge" style="background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3);">👑 {{ __('acl::routes.super_admin') }}</span>
+                                        <span class="badge badge-superadmin">👑 {{ __('acl::routes.super_admin') }}</span>
                                     @elseif($route->is_public)
-                                        <span class="badge badge-public">{{ __('acl::routes.public') }}</span>
+                                        <span class="badge badge-public">🌐 {{ __('acl::routes.public') }}</span>
+                                    @elseif($route->isAuthenticatedOnly())
+                                        <span class="badge badge-authenticated" title="{{ __('acl::routes.authenticated_only_tooltip') }}">👤 {{ __('acl::routes.authenticated_only') }}</span>
                                     @else
-                                        <span class="badge badge-protected">{{ __('acl::routes.protected') }}</span>
+                                        <span class="badge badge-protected">🛡️ {{ __('acl::routes.protected') }}</span>
                                         <span class="badge badge-{{ strtolower($route->operator) }}" style="font-size: 10px; padding: 2px 6px;">{{ $route->operator }}</span>
                                     @endif
                                 </div>
@@ -336,9 +344,27 @@
                                     @forelse($route->permissions as $perm)
                                         <span class="chip">{{ $perm->slug }}</span>
                                     @empty
-                                        <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25); color: #eab308; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 500;">
-                                            ⚠️ {{ __('acl::routes.no_permissions') }}
-                                        </span>
+                                        @if($route->is_unconfigured)
+                                            <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 500;">
+                                                🔒 {{ __('acl::routes.unconfigured') }}
+                                            </span>
+                                        @elseif($route->isAuthenticatedOnly())
+                                            <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.25); color: #c084fc; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 500;">
+                                                👤 {{ __('acl::routes.authenticated_only') }}
+                                            </span>
+                                        @elseif($route->is_public)
+                                            <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.25); color: #4ade80; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 500;">
+                                                🌐 {{ __('acl::routes.public') }}
+                                            </span>
+                                        @elseif($route->is_super_admin_only)
+                                            <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25); color: #facc15; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 500;">
+                                                👑 {{ __('acl::routes.super_admin') }}
+                                            </span>
+                                        @else
+                                            <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25); color: #eab308; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 500;">
+                                                ⚠️ {{ __('acl::routes.no_permissions') }}
+                                            </span>
+                                        @endif
                                     @endforelse
                                 </div>
                             @endif
