@@ -45,15 +45,17 @@
     </div>
 
     {{-- Permission Assignment --}}
-    @include('acl::partials.permission-picker', [
-        'allPermissions'      => $allPermissions,
-        'selectedPermissions' => old('permissions', []),
-        'title'               => __('acl::resources.required_permissions'),
-    ])
+    <div id="permission-picker-wrapper" style="{{ old('access_policy') === 'protected' ? '' : 'display: none;' }}">
+        @include('acl::partials.permission-picker', [
+            'allPermissions'      => $allPermissions,
+            'selectedPermissions' => old('permissions', []),
+            'title'               => __('acl::resources.required_permissions'),
+        ])
 
-    <div style="display: flex; gap: 12px;">
-        <button type="submit" class="btn btn-primary">{{ __('acl::common.save') }}</button>
-        <a href="{{ route('acl.resources.index') }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary">{{ __('acl::common.save') }}</button>
+            <a href="{{ route('acl.resources.index') }}" class="btn btn-secondary">{{ __('acl::common.cancel') }}</a>
+        </div>
     </div>
 </form>
 @endsection

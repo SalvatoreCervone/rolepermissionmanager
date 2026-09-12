@@ -283,17 +283,24 @@ function selectAccessPolicy(policy) {
     const operatorRow = document.getElementById('operator-settings-row');
     const noticeBanner = document.getElementById('policy-notice-banner');
     const noticeText = document.getElementById('policy-notice-text');
-    const permPickerCard = document.querySelector('.card:has(#permission-search), .card:has(.module-group)');
+    const permPickerWrapper = document.getElementById('permission-picker-wrapper');
+    const permPickerContainers = document.querySelectorAll('.permission-picker-container');
 
     if (policy === 'protected') {
         if (operatorRow) operatorRow.style.display = '';
         if (noticeBanner) noticeBanner.style.display = 'none';
-        if (permPickerCard) {
-            permPickerCard.style.opacity = '1';
-            permPickerCard.style.pointerEvents = 'auto';
+        if (permPickerWrapper) {
+            permPickerWrapper.style.display = '';
+        } else {
+            permPickerContainers.forEach(function(el) { el.style.display = ''; });
         }
     } else {
         if (operatorRow) operatorRow.style.display = 'none';
+        if (permPickerWrapper) {
+            permPickerWrapper.style.display = 'none';
+        } else {
+            permPickerContainers.forEach(function(el) { el.style.display = 'none'; });
+        }
         if (noticeBanner) {
             noticeBanner.style.display = '';
             if (policy === 'authenticated') {

@@ -96,6 +96,29 @@ class SecuredResource extends Model
         return !empty($this->getPlaceholders());
     }
 
+    /**
+     * Determine the current access policy of this resource.
+     */
+    public function getAccessPolicyAttribute(): string
+    {
+        if ($this->is_unconfigured) {
+            return 'unconfigured';
+        }
+        if ($this->is_public) {
+            return 'public';
+        }
+        if ($this->is_super_admin_only) {
+            return 'super_admin';
+        }
+        $hasPerms = $this->relationLoaded('permissions')
+            ? $this->permissions->isNotEmpty()
+            : $this->permissions()->exists();
+        if ($hasPerms) {
+            return 'protected';
+        }
+        return 'authenticated';
+    }
+
     public const TYPE_ROUTE = 'route';
     public const TYPE_CUSTOM = 'custom';
 
