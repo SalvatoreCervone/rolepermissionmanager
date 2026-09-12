@@ -144,7 +144,7 @@ class AclRegistry
      * @param  mixed   $user        The authenticatable user
      * @throws \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException
      */
-    public static function authorize(string $identifier, mixed $user = null): void
+    public static function authorize(string $identifier, mixed $user = null, ?string $message = null): void
     {
         $guard = config('rolepermissionmanager.middleware.guard');
         $user = $user ?? auth($guard)->user();
@@ -152,7 +152,7 @@ class AclRegistry
         $rule = static::getResourceRule($identifier);
 
         if ($rule && !empty($rule->is_unconfigured)) {
-            throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forUnconfiguredResource($identifier);
+            throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forUnconfiguredResource($identifier, $message);
         }
 
         if (!static::hasAccess($identifier, $user)) {
@@ -160,11 +160,17 @@ class AclRegistry
                 throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::notLoggedIn();
             }
 
+            if ($message) {
+                $exception = new \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException(403, $message);
+                $exception->resourceIdentifier = $identifier;
+                throw $exception;
+            }
+
             if ($rule && !empty($rule->permission_slugs)) {
                 throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forPermissions($rule->permission_slugs);
             }
 
-            throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forResource($identifier);
+            throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forResource($identifier, $message);
         }
     }
 
@@ -179,11 +185,17 @@ class AclRegistry
      * until an administrator configures and saves permissions for it in the Admin Panel.
      *
      * @param  string|null  $identifier  Optional custom identifier (defaults to Class@method of caller)
+     * @param  string|null  $message     Optional custom user-facing denial message
      * @param  mixed        $user        Optional authenticatable user
      * @throws \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException
      */
-    public static function protect(?string $identifier = null, mixed $user = null): void
+    public static function protect(?string $identifier = null, ?string $message = null, mixed $user = null): void
     {
+        if ($message instanceof \Illuminate\Contracts\Auth\Authenticatable) {
+            $user = $message;
+            $message = null;
+        }
+
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
         $caller = $trace[1] ?? [];
         $callerClass = isset($caller['class']) ? class_basename($caller['class']) : 'Global';
@@ -235,10 +247,10 @@ class AclRegistry
         }
 
         if ($rule && !empty($rule->is_unconfigured)) {
-            throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forUnconfiguredResource($identifier);
+            throw \SalvatoreCervone\RolePermissionManager\Exceptions\UnauthorizedException::forUnconfiguredResource($identifier, $message);
         }
 
-        static::authorize($identifier, $user);
+        static::authorize($identifier, $user, $message);
     }
 
     /**

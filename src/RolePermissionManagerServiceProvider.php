@@ -208,6 +208,14 @@ class RolePermissionManagerServiceProvider extends ServiceProvider
         Blade::if('canResource', function (string $identifier) {
             return AclRegistry::hasAccess($identifier);
         });
+
+        // @aclAlerts or @aclToast (renders automatic AJAX 403 toast interceptor)
+        Blade::directive('aclAlerts', function () {
+            return "<?php echo view('acl::partials.acl-alerts')->render(); ?>";
+        });
+        Blade::directive('aclToast', function () {
+            return "<?php echo view('acl::partials.acl-alerts')->render(); ?>";
+        });
     }
 
     /**

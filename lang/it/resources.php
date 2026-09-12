@@ -40,4 +40,8 @@ return [
     'view_unconfigured'             => 'Vedi risorse bloccate',
     'unconfigured_edit_warning_title' => 'Risorsa Auto-Rilevata in Fail-Closed (Bloccata)',
     'unconfigured_edit_warning_desc'  => 'Questa risorsa è stata registrata automaticamente tramite AclRegistry::protect(). Attualmente blocca tutti gli accessi con HTTP 403 (compreso il Super Admin). Seleziona i permessi desiderati (oppure impostala come pubblica o solo super admin) e clicca "Salva" per sbloccarla.',
+    'unconfigured_denied_message'   => "Accesso non consentito: la funzionalità ':resource' è in attesa di configurazione nel pannello permessi.",
+    'unauthorized_denied_message'   => "Accesso negato: non possiedi i permessi necessari per ':resource'.",
+    'toast_title'                   => 'Accesso Negato',
+    'toast_dismiss'                 => 'Chiudi',
 ];

@@ -219,4 +219,48 @@ class AutoProtectedResourceTest extends TestCase
         $filterResponse->assertSee('unconfigured.two');
         $filterResponse->assertDontSee('configured.regular');
     }
+
+    public function test_protect_supports_custom_denial_message(): void
+    {
+        $customMsg = 'Accesso non consentito: funzione riservata alla tesoreria.';
+
+        try {
+            AclRegistry::protect('treasury.execute_transfer', $customMsg);
+            $this->fail('Expected UnauthorizedException');
+        } catch (UnauthorizedException $e) {
+            $this->assertEquals(403, $e->getStatusCode());
+            $this->assertEquals($customMsg, $e->getMessage());
+        }
+    }
+
+    public function test_unauthorized_exception_renders_clean_json_for_ajax_requests(): void
+    {
+        $exception = UnauthorizedException::forUnconfiguredResource('SpecialController@action');
+
+        $request = \Illuminate\Http\Request::create('/api/test', 'GET');
+        $request->headers->set('Accept', 'application/json');
+
+        $response = $exception->render($request);
+        $this->assertInstanceOf(\Illuminate\Http\JsonResponse::class, $response);
+        $this->assertEquals(403, $response->getStatusCode());
+        $this->assertEquals('1', $response->headers->get('X-ACL-Denied'));
+
+        $data = $response->getData(true);
+        $this->assertFalse($data['success']);
+        $this->assertEquals('unauthorized', $data['error']);
+        $this->assertNotEmpty($data['message']);
+        $this->assertEquals('SpecialController@action', $data['resource']);
+    }
+
+    public function test_blade_directive_acl_alerts_renders_toast_engine(): void
+    {
+        $rendered = \Illuminate\Support\Facades\Blade::render('@aclAlerts');
+        $this->assertStringContainsString('id="acl-toast-container"', $rendered);
+        $this->assertStringContainsString('window.showAclToast', $rendered);
+        $this->assertStringContainsString('window.axios', $rendered);
+        $this->assertStringContainsString('window.fetch', $rendered);
+
+        $toastRendered = \Illuminate\Support\Facades\Blade::render('@aclToast');
+        $this->assertStringContainsString('id="acl-toast-container"', $toastRendered);
+    }
 }

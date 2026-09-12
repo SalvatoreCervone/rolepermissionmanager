@@ -216,27 +216,77 @@ php artisan acl:import /path/to/acl-export.json --overwrite  # Overwrite existin
 
 ## 🎨 Blade Directives
 
+RolePermissionManager provides powerful, expressive Blade directives to conditionally render UI elements based on roles, permissions, routes, and custom resources, plus an automated client-side notification engine:
+
+### 1. Role Verification (`@role`)
+Checks if the authenticated user has a specific role (by slug):
 ```blade
-{{-- 1. Check Role --}}
 @role('admin')
     <a href="/admin/settings">Admin Settings</a>
+@else
+    <span>Standard User Area</span>
 @endrole
+```
 
-{{-- 2. Check Permission (Direct or via Role) --}}
+### 2. Permission Verification (`@haspermission`)
+Checks if the user has a permission (assigned directly or inherited through any of their roles):
+```blade
 @haspermission('invoices.export')
-    <button>Export CSV</button>
+    <button class="btn btn-secondary">Export CSV</button>
 @endhaspermission
+```
 
-{{-- 3. Check Route Access --}}
+### 3. Route Authorization Check (`@canRoute`)
+Checks if the current user is permitted to access a specific route by its **name** or its **`METHOD:uri` signature**:
+```blade
+{{-- Check by route name --}}
 @canRoute('invoices.destroy')
     <button class="btn-delete">Delete Invoice</button>
 @endcanRoute
 
-{{-- 4. Check Custom Resource Access --}}
+{{-- Check by HTTP verb + URI signature --}}
+@canRoute('POST:api/v1/invoices')
+    <button class="btn-create">Create Invoice</button>
+@endcanRoute
+```
+
+### 4. Custom Resource Authorization Check (`@canResource`)
+Checks if the user is authorized to access an internal class method, service, or custom ACL resource:
+```blade
 @canResource('CorsoController@dettagliocorsi')
-    <button class="btn-info">View Details</button>
+    <button class="btn-info">View Course Details</button>
+@endcanResource
+
+@canResource('stampa.questori')
+    <button class="btn-primary">Stampa Questori</button>
 @endcanResource
 ```
+
+### 5. Automated AJAX 403 / Denial Toast Engine (`@aclAlerts` or `@aclToast`)
+Place this directive once in your master application layout (e.g. `resources/views/layouts/app.blade.php` before `</body>`):
+
+```blade
+    {{-- Automatic Toast / Alert Engine for AJAX / Fetch / Axios --}}
+    @aclAlerts   {{-- or @aclToast --}}
+</body>
+</html>
+```
+
+**What it does automatically (Zero Dependencies, pure Vanilla CSS & JS):**
+- **Seamless Interception**: Automatically catches HTTP 403 (and 401) responses across:
+  - `window.axios` (Axios)
+  - `window.fetch` (Native browser Fetch API)
+  - `XMLHttpRequest` (jQuery `$.ajax`, `$.post`, Vue, Livewire, Alpine.js, Inertia)
+- **Visual Feedback**: Instantly pops up a sleek, modern floating Toast in the top-right corner with a 🔒 lock icon, denial message, 5-second progress bar, and dismiss button (`✕`).
+- **Global JavaScript Event**: Emits a `CustomEvent` on `window` allowing custom integration with libraries like **SweetAlert2** or **Toastr**:
+  ```javascript
+  window.addEventListener('acl:denied', (event) => {
+      console.warn('Access denied:', event.detail.message);
+      // Optional: hook into SweetAlert2
+      // Swal.fire('Access Denied', event.detail.message, 'warning');
+  });
+  ```
+  *(To disable the default visual toast and solely use your own modal/alert library, set `window.ACL_DISABLE_DEFAULT_TOAST = true;` before the script runs).*
 
 ---
 
@@ -254,8 +304,8 @@ class CorsoController extends Controller
         // 1. One line: auto-detects 'CorsoController@esportaAnagrafica'
         AclRegistry::protect();
 
-        // Or specify an explicit alias:
-        // AclRegistry::protect('anagrafica.export');
+        // Or specify an explicit alias and optional custom user-facing message:
+        // AclRegistry::protect('anagrafica.export', 'Accesso non consentito alla stampa anagrafica.');
 
         // Business logic runs ONLY if authorized...
     }

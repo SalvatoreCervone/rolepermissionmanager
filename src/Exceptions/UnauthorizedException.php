@@ -35,9 +35,10 @@ class UnauthorizedException extends HttpException
     /**
      * Create a new UnauthorizedException for a protected resource.
      */
-    public static function forResource(string $identifier): self
+    public static function forResource(string $identifier, ?string $customMessage = null): self
     {
-        $exception = new self(403, 'User is not authorized.');
+        $msg = $customMessage ?: 'User is not authorized.';
+        $exception = new self(403, $msg);
         $exception->resourceIdentifier = $identifier;
 
         return $exception;
@@ -46,9 +47,18 @@ class UnauthorizedException extends HttpException
     /**
      * Create a new UnauthorizedException for an unconfigured (pending/locked) resource.
      */
-    public static function forUnconfiguredResource(string $identifier): self
+    public static function forUnconfiguredResource(string $identifier, ?string $customMessage = null): self
     {
-        $exception = new self(403, "Resource '{$identifier}' is unconfigured and locked.");
+        if ($customMessage) {
+            $msg = $customMessage;
+        } else {
+            $translated = function_exists('__') ? __('acl::resources.unconfigured_denied_message', ['resource' => $identifier]) : null;
+            $msg = ($translated && $translated !== 'acl::resources.unconfigured_denied_message')
+                ? $translated
+                : "Resource '{$identifier}' is unconfigured and locked.";
+        }
+
+        $exception = new self(403, $msg);
         $exception->resourceIdentifier = $identifier;
 
         return $exception;
@@ -84,5 +94,25 @@ class UnauthorizedException extends HttpException
     public function getResourceIdentifier(): ?string
     {
         return $this->resourceIdentifier;
+    }
+
+    /**
+     * Render the exception into an HTTP response for AJAX / JSON requests.
+     */
+    public function render($request)
+    {
+        if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success'  => false,
+                'error'    => 'unauthorized',
+                'message'  => $this->getMessage(),
+                'resource' => $this->resourceIdentifier,
+            ], $this->getStatusCode(), [
+                'X-ACL-Denied'   => '1',
+                'X-ACL-Resource' => (string) ($this->resourceIdentifier ?? ''),
+            ]);
+        }
+
+        return false;
     }
 }

@@ -40,4 +40,8 @@ return [
     'view_unconfigured'             => 'View blocked resources',
     'unconfigured_edit_warning_title' => 'Auto-Discovered Fail-Closed Resource (Blocked)',
     'unconfigured_edit_warning_desc'  => 'This resource was automatically registered via AclRegistry::protect(). It currently denies all access with HTTP 403 (including for Super Admin). Select the required permissions (or set as public / super admin only) and click "Save" to unlock it.',
+    'unconfigured_denied_message'   => "Access denied: the feature ':resource' is unconfigured and pending configuration in the permissions panel.",
+    'unauthorized_denied_message'   => "Access denied: you do not possess the required permissions for ':resource'.",
+    'toast_title'                   => 'Access Denied',
+    'toast_dismiss'                 => 'Dismiss',
 ];
