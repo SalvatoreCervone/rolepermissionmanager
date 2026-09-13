@@ -220,6 +220,12 @@ class AdminPanelTest extends TestCase
         $respSpecific->assertStatus(200);
         $respSpecific->assertSee('orders.view_route');
         $respSpecific->assertDontSee('orders.orphan_route');
+
+        // 3. Filter by status=no_permissions
+        $respStatusNone = $this->get('/acl-admin/routes?status=no_permissions');
+        $respStatusNone->assertStatus(200);
+        $respStatusNone->assertSee('orders.orphan_route');
+        $respStatusNone->assertDontSee('orders.view_route');
     }
 
     public function test_routes_index_can_filter_by_file(): void

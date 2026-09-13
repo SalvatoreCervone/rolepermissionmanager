@@ -26,12 +26,13 @@ class SecuredResourceController extends Controller
         // Filters
         if ($request->filled('status')) {
             match ($request->get('status')) {
-                'unconfigured'  => $query->unconfigured(),
-                'public'        => $query->public(),
-                'authenticated' => $query->authenticatedOnly(),
-                'protected'     => $query->protectedWithPermissions(),
-                'super_admin'   => $query->superAdminOnly(),
-                default         => null,
+                'unconfigured'   => $query->unconfigured(),
+                'public'         => $query->public(),
+                'authenticated'  => $query->authenticatedOnly(),
+                'protected'      => $query->protectedWithPermissions(),
+                'no_permissions' => $query->whereDoesntHave('permissions'),
+                'super_admin'    => $query->superAdminOnly(),
+                default          => null,
             };
         }
         if ($request->filled('permission')) {

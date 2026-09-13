@@ -13,7 +13,7 @@ return [
     'all_status'                   => 'All Statuses',
     'all_files'                    => 'All Route Files',
     'all_permissions'              => 'All Permissions',
-    'no_permissions_assigned'       => 'No Permissions',
+    'no_permissions_assigned'       => 'No Permissions Assigned',
     'has_permissions_assigned'      => 'With Permissions',
     'uri'                          => 'URI',
     'controller_action'            => 'Controller Action',

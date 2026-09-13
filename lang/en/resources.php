@@ -83,6 +83,6 @@ return [
     'select_permissions_to_apply'  => 'Select permissions to apply to chosen resources:',
     'confirm_bulk_action'          => 'Are you sure you want to apply this bulk action to all selected resources?',
     'bulk_updated_success'         => ':count resources updated successfully.',
-    'no_permissions_assigned'      => 'No Permissions',
+    'no_permissions_assigned'      => 'No Permissions Assigned',
     'has_permissions_assigned'     => 'With Permissions',
 ];

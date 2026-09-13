@@ -41,15 +41,16 @@ class RouteResourceController extends Controller
         if ($request->filled('file')) {
             $query->where('source_file', $request->get('file'));
         }
-        if ($request->filled('status') && in_array($status, ['public', 'protected', 'super_admin', 'deprecated', 'authenticated', 'unconfigured'])) {
+        if ($request->filled('status') && in_array($status, ['public', 'protected', 'super_admin', 'deprecated', 'authenticated', 'unconfigured', 'no_permissions'])) {
             match ($status) {
-                'public'        => $query->public()->active(),
-                'authenticated' => $query->authenticatedOnly()->active(),
-                'protected'     => $query->protectedWithPermissions()->active(),
-                'super_admin'   => $query->superAdminOnly()->active(),
-                'unconfigured'  => $query->unconfigured()->active(),
-                'deprecated'    => $query->where('is_deprecated', true),
-                default         => null,
+                'public'         => $query->public()->active(),
+                'authenticated'  => $query->authenticatedOnly()->active(),
+                'protected'      => $query->protectedWithPermissions()->active(),
+                'super_admin'    => $query->superAdminOnly()->active(),
+                'unconfigured'   => $query->unconfigured()->active(),
+                'deprecated'     => $query->where('is_deprecated', true),
+                'no_permissions' => $query->whereDoesntHave('permissions')->active(),
+                default          => null,
             };
         }
         if ($request->filled('permission')) {
@@ -112,7 +113,7 @@ class RouteResourceController extends Controller
                 $page,
                 ['path' => $request->url(), 'query' => $request->query()]
             );
-        } elseif ($status === 'managed' || in_array($status, ['public', 'protected', 'super_admin', 'deprecated', 'authenticated', 'unconfigured'])) {
+        } elseif ($status === 'managed' || in_array($status, ['public', 'protected', 'super_admin', 'deprecated', 'authenticated', 'unconfigured', 'no_permissions'])) {
             $isSkipped = false;
             $routes = $query->paginate($perPage)->appends($request->query());
         } else {

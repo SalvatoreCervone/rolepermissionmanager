@@ -113,6 +113,7 @@
             <option value="public" {{ request('status') === 'public' ? 'selected' : '' }}>🌐 {{ __('acl::resources.public') }}</option>
             <option value="authenticated" {{ request('status') === 'authenticated' ? 'selected' : '' }}>👤 {{ __('acl::routes.authenticated_only') }}</option>
             <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🛡️ {{ __('acl::resources.protected') }}</option>
+            <option value="no_permissions" {{ request('status') === 'no_permissions' ? 'selected' : '' }}>⚠️ {{ __('acl::routes.no_permissions_assigned') }}</option>
             <option value="super_admin" {{ request('status') === 'super_admin' ? 'selected' : '' }}>👑 {{ __('acl::routes.super_admin') }}</option>
         </select>
         <select name="permission" class="form-control" onchange="this.form.submit()">

@@ -13,7 +13,7 @@ return [
     'all_status'                   => 'Tutti gli Stati',
     'all_files'                    => 'Tutti i File',
     'all_permissions'              => 'Tutti i Permessi',
-    'no_permissions_assigned'       => 'Senza Permessi',
+    'no_permissions_assigned'       => 'Senza Permessi Assegnati',
     'has_permissions_assigned'      => 'Con Permessi',
     'uri'                          => 'URI',
     'controller_action'            => 'Azione Controller',

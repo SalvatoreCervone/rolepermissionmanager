@@ -166,6 +166,7 @@
             <option value="public" {{ request('status') === 'public' ? 'selected' : '' }}>🌐 {{ __('acl::routes.public') }}</option>
             <option value="authenticated" {{ request('status') === 'authenticated' ? 'selected' : '' }}>👤 {{ __('acl::routes.authenticated_only') }}</option>
             <option value="protected" {{ request('status') === 'protected' ? 'selected' : '' }}>🛡️ {{ __('acl::routes.protected') }}</option>
+            <option value="no_permissions" {{ request('status') === 'no_permissions' ? 'selected' : '' }}>⚠️ {{ __('acl::routes.no_permissions_assigned') }}</option>
             <option value="super_admin" {{ request('status') === 'super_admin' ? 'selected' : '' }}>👑 {{ __('acl::routes.super_admin') }}</option>
             <option value="unconfigured" {{ request('status') === 'unconfigured' ? 'selected' : '' }}>🔒 {{ __('acl::routes.unconfigured') }}</option>
             <option value="deprecated" {{ request('status') === 'deprecated' ? 'selected' : '' }}>📦 {{ __('acl::routes.deprecated') }}</option>
